@@ -53,7 +53,6 @@
         }
 
         .message {
-            color: red;
             font-size: 14px;
             text-align: center;
         }
@@ -62,17 +61,6 @@
             margin-top: 20px;
             list-style: none;
             padding: 0;
-        }
-
-        .data-list li {
-            background-color: #f9f9f9;
-            padding: 8px;
-            border: 1px solid #ddd;
-            margin-bottom: 5px;
-            border-radius: 4px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
 
         .ip-container {
@@ -180,8 +168,6 @@
 
     <div id="message" class="message"></div>
 
-    <ul id="dataList" class="data-list"></ul>
-
     <button id="showDataBtn" class="show-data-btn">Xem Dữ Liệu</button>
 
     <div id="dataBanner">
@@ -196,30 +182,52 @@
     const resetButton = document.getElementById('resetButton');
     const inputData = document.getElementById('inputData');
     const messageDiv = document.getElementById('message');
-    const dataList = document.getElementById('dataList');
     const ipInfoDiv = document.getElementById('ipInfo');
     const showDataBtn = document.getElementById('showDataBtn');
     const dataBanner = document.getElementById('dataBanner');
     const storedDataList = document.getElementById('storedDataList');
 
-    // Add data to memory
+    // Render stored data in banner
+    function renderStoredData() {
+        storedDataList.innerHTML = '';
+        dataMemory.forEach((item, index) => {
+            const li = document.createElement('li');
+            li.textContent = item;
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = 'Xóa';
+            deleteBtn.addEventListener('click', () => {
+                dataMemory.splice(index, 1);
+                localStorage.setItem('dataMemory', JSON.stringify(dataMemory));
+                renderStoredData();
+            });
+
+            li.appendChild(deleteBtn);
+            storedDataList.appendChild(li);
+        });
+    }
+
+    // Add data
     function addData() {
         const inputValue = inputData.value.trim();
         if (!inputValue) {
+            messageDiv.style.color = 'red';
             messageDiv.textContent = 'Vui lòng nhập dữ liệu!';
             return;
         }
         if (dataMemory.includes(inputValue)) {
-            messageDiv.textContent = 'Dữ liệu đã tồn tại trong bộ nhớ!';
+            messageDiv.style.color = 'red';
+            messageDiv.textContent = 'Dữ liệu đã tồn tại!';
             return;
         }
         dataMemory.push(inputValue);
         localStorage.setItem('dataMemory', JSON.stringify(dataMemory));
-        messageDiv.textContent = '';
+        messageDiv.style.color = 'green';
+        messageDiv.textContent = 'Dữ liệu đã được lưu!';
         inputData.value = '';
     }
 
-    // Fetch IP address
+    // Fetch IP
     function getIPAddress() {
         ipInfoDiv.textContent = 'Đang tải IP...';
         resetButton.classList.add('loading');
@@ -234,6 +242,7 @@
     // Toggle data banner
     function toggleDataBanner() {
         if (dataBanner.style.display === 'none') {
+            renderStoredData();
             dataBanner.style.display = 'block';
         } else {
             dataBanner.style.display = 'none';
@@ -242,12 +251,18 @@
 
     // Event listeners
     addButton.addEventListener('click', addData);
+    inputData.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            addData();
+        }
+    });
     resetButton.addEventListener('click', getIPAddress);
     showDataBtn.addEventListener('click', toggleDataBanner);
 
-    // Load initial IP
+    // Initialize
     window.onload = () => {
         getIPAddress();
+        renderStoredData();
     };
 </script>
 
