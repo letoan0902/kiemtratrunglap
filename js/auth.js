@@ -387,6 +387,23 @@ class AuthSystem {
         };
       }
 
+      // Kiểm tra trạng thái khóa của user
+      if (foundUserData.status === false) {
+        this.securityMonitor.recordFailedAttempt(clientId);
+        this.securityMonitor.logActivity("login_failed", {
+          reason: "account_locked",
+          email: foundUserData.email,
+          clientId,
+        });
+        return {
+          success: false,
+          message:
+            "Bạn đã bị khóa, vui lòng liên lạc người quản lý để biết thêm chi tiết",
+          field: "email",
+          isLocked: true,
+        };
+      }
+
       if (foundUserData.password !== password) {
         this.securityMonitor.recordFailedAttempt(clientId);
         this.securityMonitor.logActivity("login_failed", {
@@ -658,6 +675,7 @@ class AuthSystem {
         createdAt: serverTimestamp(),
         createdBy: this.currentUser.email,
         isActive: true,
+        status: true, // true = mở khóa, false = bị khóa
       };
 
       // Thao tác ghi đơn lẻ nhanh
@@ -744,17 +762,34 @@ class AuthSystem {
     try {
       await this.waitForInitialization();
 
-      // Thay vì xóa, chúng ta sẽ vô hiệu hóa người dùng
+      // Lấy thông tin user hiện tại để kiểm tra status
+      const userDoc = await getDoc(doc(this.db, "users", userId));
+      if (!userDoc.exists()) {
+        return { success: false, message: "Không tìm thấy người dùng!" };
+      }
+
+      const userData = userDoc.data();
+      const newStatus = !userData.status; // Toggle status
+
+      // Cập nhật status thay vì xóa
       await updateDoc(doc(this.db, "users", userId), {
-        isActive: false,
-        deletedAt: serverTimestamp(),
-        deletedBy: this.currentUser.email,
+        status: newStatus,
+        updatedAt: serverTimestamp(),
+        updatedBy: this.currentUser.email,
       });
 
-      return { success: true };
+      const action = newStatus ? "mở khóa" : "khóa";
+      return {
+        success: true,
+        message: `${action} người dùng thành công!`,
+        newStatus: newStatus,
+      };
     } catch (error) {
-      console.error("Lỗi khi xóa người dùng:", error);
-      return { success: false, message: "Có lỗi xảy ra khi xóa người dùng!" };
+      console.error("Lỗi khi thay đổi trạng thái người dùng:", error);
+      return {
+        success: false,
+        message: "Có lỗi xảy ra khi thay đổi trạng thái người dùng!",
+      };
     }
   }
 
