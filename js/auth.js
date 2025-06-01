@@ -399,10 +399,10 @@ class AuthSystem {
   generateClientId() {
     const timestamp = Date.now().toString(36);
     const random = Math.random().toString(36).substr(2, 9);
-    const screen = `${screen.width}x${screen.height}`;
+    const screenSize = `${window.screen.width}x${window.screen.height}`;
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-    return btoa(`${timestamp}_${random}_${screen}_${tz}`).substr(0, 16);
+    return btoa(`${timestamp}_${random}_${screenSize}_${tz}`).substr(0, 16);
   }
 
   async logout() {
