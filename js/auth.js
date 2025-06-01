@@ -492,6 +492,31 @@ class AuthSystem {
     this.currentUser = null;
     sessionStorage.removeItem("currentUser");
     sessionStorage.removeItem("clientId");
+
+    // Clear all localStorage data including auto-save data
+    try {
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (
+          key &&
+          (key.startsWith("app_") ||
+            key.startsWith("auth_") ||
+            key.startsWith("user_"))
+        ) {
+          keysToRemove.push(key);
+        }
+      }
+
+      keysToRemove.forEach((key) => {
+        localStorage.removeItem(key);
+      });
+
+      console.log("Cleared localStorage on logout:", keysToRemove);
+    } catch (error) {
+      console.warn("Failed to clear localStorage on logout:", error);
+    }
+
     window.location.href = "index.html";
   }
 

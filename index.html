@@ -54,6 +54,97 @@
 
     <!-- Application Scripts with optimized loading -->
     <script src="js/utils.js"></script>
+    
+    <!-- Global functions that need to be accessible from HTML -->
+    <script>
+        // Global password toggle function - must be in global scope for onclick
+        function togglePassword(inputId, button) {
+            const input = document.getElementById(inputId);
+            const hideIcon = button.querySelector('.hide-icon');
+            const showIcon = button.querySelector('.show-icon');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                hideIcon.style.display = 'none';
+                showIcon.style.display = 'block';
+            } else {
+                input.type = 'password';
+                hideIcon.style.display = 'block';
+                showIcon.style.display = 'none';
+            }
+        }
+
+        // Auto-save functionality
+        let autoSaveInterval = null;
+        
+        function startAutoSave() {
+            // Save form data every 10 seconds
+            autoSaveInterval = setInterval(() => {
+                saveFormDataToLocal();
+            }, 10000); // 10 seconds
+        }
+        
+        function stopAutoSave() {
+            if (autoSaveInterval) {
+                clearInterval(autoSaveInterval);
+                autoSaveInterval = null;
+            }
+        }
+        
+        function saveFormDataToLocal() {
+            try {
+                const formData = {
+                    email: document.getElementById('email')?.value || '',
+                    timestamp: new Date().toISOString(),
+                    page: 'login'
+                };
+                
+                localStorage.setItem('app_form_backup', JSON.stringify(formData));
+                console.log('Auto-saved form data:', formData);
+            } catch (error) {
+                console.warn('Failed to save form data:', error);
+            }
+        }
+        
+        function loadFormDataFromLocal() {
+            try {
+                const savedData = localStorage.getItem('app_form_backup');
+                if (savedData) {
+                    const formData = JSON.parse(savedData);
+                    if (formData.page === 'login' && formData.email) {
+                        const emailInput = document.getElementById('email');
+                        if (emailInput && !emailInput.value) {
+                            emailInput.value = formData.email;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.warn('Failed to load form data:', error);
+            }
+        }
+        
+        function clearAllLocalData() {
+            try {
+                // Clear all app-related localStorage data
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && (key.startsWith('app_') || key.startsWith('auth_') || key.startsWith('user_'))) {
+                        keysToRemove.push(key);
+                    }
+                }
+                
+                keysToRemove.forEach(key => {
+                    localStorage.removeItem(key);
+                });
+                
+                console.log('Cleared local data:', keysToRemove);
+            } catch (error) {
+                console.warn('Failed to clear local data:', error);
+            }
+        }
+    </script>
+    
     <script type="module">
         // Optimized module imports with timeout fallback
         const MODULE_TIMEOUT = 10000; // 10 seconds
@@ -129,22 +220,6 @@
             document.body.appendChild(modal);
         }
 
-        function togglePassword(inputId, button) {
-            const input = document.getElementById(inputId);
-            const hideIcon = button.querySelector('.hide-icon');
-            const showIcon = button.querySelector('.show-icon');
-            
-            if (input.type === 'password') {
-                input.type = 'text';
-                hideIcon.style.display = 'none';
-                showIcon.style.display = 'block';
-            } else {
-                input.type = 'password';
-                hideIcon.style.display = 'block';
-                showIcon.style.display = 'none';
-            }
-        }
-
         // Fast authentication system checker
         async function waitForAuthSystem(maxAttempts = 100) {
             for (let i = 0; i < maxAttempts; i++) {
@@ -189,9 +264,18 @@
             const emailInput = document.getElementById('email');
             const passwordInput = document.getElementById('password');
 
+            // Load saved form data
+            loadFormDataFromLocal();
+            
+            // Start auto-save
+            startAutoSave();
+
             // Handle form submission
             loginForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
+                
+                // Stop auto-save during submission
+                stopAutoSave();
                 
                 clearErrors();
                 
@@ -211,7 +295,11 @@
                     hasErrors = true;
                 }
 
-                if (hasErrors) return;
+                if (hasErrors) {
+                    // Restart auto-save if there are errors
+                    startAutoSave();
+                    return;
+                }
 
                 showLoadingModal('Đang xác thực tài khoản...');
 
@@ -221,6 +309,9 @@
                     if (result.success) {
                         showLoadingModal('Đăng nhập thành công!');
                         
+                        // Clear auto-save data on successful login
+                        localStorage.removeItem('app_form_backup');
+                        
                         // Fast redirect
                         setTimeout(() => {
                             hideLoadingModal();
@@ -228,6 +319,9 @@
                         }, 300); // Reduced from 500ms
                     } else {
                         hideLoadingModal();
+                        
+                        // Restart auto-save on failed login
+                        startAutoSave();
                         
                         // Kiểm tra nếu user bị khóa
                         if (result.isLocked) {
@@ -247,13 +341,19 @@
                 } catch (error) {
                     console.error('Login error:', error);
                     hideLoadingModal();
+                    
+                    // Restart auto-save on error
+                    startAutoSave();
+                    
                     showFieldError('email', 'Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại!');
                 }
             });
 
-            // Clear errors when user starts typing
+            // Clear errors when user starts typing and trigger auto-save
             emailInput.addEventListener('input', () => {
                 document.getElementById('emailError').textContent = '';
+                // Trigger immediate save when user types
+                saveFormDataToLocal();
             });
 
             passwordInput.addEventListener('input', () => {
@@ -275,6 +375,11 @@
 
             // Auto focus on email input
             emailInput.focus();
+            
+            // Cleanup on page unload
+            window.addEventListener('beforeunload', () => {
+                stopAutoSave();
+            });
         }
 
         // Start the application

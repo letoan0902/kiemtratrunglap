@@ -325,6 +325,92 @@
 
     <!-- Application Scripts -->
     <script src="js/utils.js"></script>
+    
+    <!-- Global functions that need to be accessible from HTML -->
+    <script>
+        // Global password toggle function - must be in global scope for onclick
+        function togglePassword(inputId, button) {
+            const input = document.getElementById(inputId);
+            const hideIcon = button.querySelector('.hide-icon');
+            const showIcon = button.querySelector('.show-icon');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                hideIcon.style.display = 'none';
+                showIcon.style.display = 'block';
+            } else {
+                input.type = 'password';
+                hideIcon.style.display = 'block';
+                showIcon.style.display = 'none';
+            }
+        }
+
+        // Auto-save functionality for admin forms
+        let adminAutoSaveInterval = null;
+        
+        function startAdminAutoSave() {
+            adminAutoSaveInterval = setInterval(() => {
+                saveAdminFormDataToLocal();
+            }, 10000); // 10 seconds
+        }
+        
+        function stopAdminAutoSave() {
+            if (adminAutoSaveInterval) {
+                clearInterval(adminAutoSaveInterval);
+                adminAutoSaveInterval = null;
+            }
+        }
+        
+        function saveAdminFormDataToLocal() {
+            try {
+                const formData = {
+                    timestamp: new Date().toISOString(),
+                    page: 'admin',
+                    currentTab: window.adminPanel?.currentTab || 'users'
+                };
+                
+                // Save any open modal form data
+                const activeModal = document.querySelector('.modal[style*="flex"]');
+                if (activeModal) {
+                    const form = activeModal.querySelector('form');
+                    if (form) {
+                        const inputs = form.querySelectorAll('input[type="text"], input[type="email"], textarea');
+                        inputs.forEach(input => {
+                            if (input.id && input.value) {
+                                formData[input.id] = input.value;
+                            }
+                        });
+                    }
+                }
+                
+                localStorage.setItem('admin_form_backup', JSON.stringify(formData));
+                console.log('Auto-saved admin form data');
+            } catch (error) {
+                console.warn('Failed to save admin form data:', error);
+            }
+        }
+        
+        function clearAllAdminLocalData() {
+            try {
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && (key.startsWith('admin_') || key.startsWith('app_') || key.startsWith('auth_') || key.startsWith('user_'))) {
+                        keysToRemove.push(key);
+                    }
+                }
+                
+                keysToRemove.forEach(key => {
+                    localStorage.removeItem(key);
+                });
+                
+                console.log('Cleared admin local data:', keysToRemove);
+            } catch (error) {
+                console.warn('Failed to clear admin local data:', error);
+            }
+        }
+    </script>
+    
     <script type="module">
         // Import modules
         import { configManager, rateLimiter } from './js/config.js';
@@ -360,6 +446,14 @@
                 await this.loadData();
                 this.updateUI();
                 this.initCustomSelects();
+                
+                // Start auto-save for admin forms
+                startAdminAutoSave();
+                
+                // Cleanup on page unload
+                window.addEventListener('beforeunload', () => {
+                    stopAdminAutoSave();
+                });
             }
 
             async waitForAuth() {
@@ -404,6 +498,10 @@
 
                 // Logout
                 document.getElementById('logoutBtn').addEventListener('click', () => {
+                    // Stop auto-save and clear local data before logout
+                    stopAdminAutoSave();
+                    clearAllAdminLocalData();
+                    
                     authSystem.logout();
                 });
 
@@ -2320,23 +2418,6 @@
             adminPanel = new AdminPanel();
             window.adminPanel = adminPanel;
         });
-
-        // Global password toggle function
-        function togglePassword(inputId, button) {
-            const input = document.getElementById(inputId);
-            const hideIcon = button.querySelector('.hide-icon');
-            const showIcon = button.querySelector('.show-icon');
-            
-            if (input.type === 'password') {
-                input.type = 'text';
-                hideIcon.style.display = 'none';
-                showIcon.style.display = 'block';
-            } else {
-                input.type = 'password';
-                hideIcon.style.display = 'block';
-                showIcon.style.display = 'none';
-            }
-        }
     </script>
 
     <style>
