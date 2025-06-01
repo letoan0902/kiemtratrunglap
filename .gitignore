@@ -1,7 +1,7 @@
 # Firebase CLI files (không cần cho GitHub Pages)
 firebase.json
 firestore.indexes.json
-firestore.rules
+# firestore.rules - KEEP this for security
 
 # Documentation files (không cần cho GitHub Pages)
 firebase-setup.md

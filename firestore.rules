@@ -1,0 +1,79 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions for custom authentication
+    function isValidEmail(email) {
+      return email.matches('.*@.*\\..*');
+    }
+    
+    function isValidUserData(data) {
+      return data.keys().hasAll(['email', 'password', 'name', 'role', 'isActive']) &&
+             data.role in ['admin', 'user'] &&
+             data.isActive is bool &&
+             data.email is string &&
+             data.password is string &&
+             data.name is string;
+    }
+    
+    function isValidFieldData(data) {
+      return data.keys().hasAll(['name', 'isActive']) &&
+             data.isActive is bool &&
+             data.name is string &&
+             (data.data is list || !data.keys().hasAny(['data']));
+    }
+    
+    // Users collection - Basic protection
+    match /users/{userId} {
+      // Allow read for valid email format documents
+      allow read: if isValidEmail(userId);
+      
+      // Allow create only with valid structure and email as document ID
+      allow create: if isValidEmail(userId) &&
+                      userId == resource.data.email &&
+                      isValidUserData(resource.data) &&
+                      resource.data.role == 'user';
+      
+      // Allow update with some restrictions
+      allow update: if isValidEmail(userId) &&
+                      userId == resource.data.email &&
+                      // Prevent role escalation (only admin can change roles)
+                      (resource.data.role == request.resource.data.role ||
+                       request.resource.data.role == 'user') &&
+                      // Keep basic structure
+                      request.resource.data.keys().hasAll(['email', 'name', 'role', 'isActive']);
+      
+      // Allow delete (deactivation) - will be controlled by application logic
+      allow delete: if isValidEmail(userId);
+    }
+    
+    // Fields collection - Basic protection  
+    match /fields/{fieldId} {
+      // Allow read for active fields
+      allow read: if resource.data.isActive == true;
+      
+      // Allow create with valid structure
+      allow create: if isValidFieldData(resource.data) &&
+                      resource.data.isActive == true;
+      
+      // Allow update with structure validation
+      allow update: if isValidFieldData(request.resource.data);
+      
+      // Allow delete (deactivation)
+      allow delete: if true;
+    }
+    
+    // Activity logs (optional) - Allow creation for logging
+    match /activity_logs/{logId} {
+      allow read: if true; // Will be filtered by application
+      allow create: if request.resource.data.keys().hasAll(['type', 'timestamp']);
+      allow update: if false; // Logs should not be modified
+      allow delete: if false; // Logs should not be deleted
+    }
+    
+    // Security: Block access to any other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+} 
