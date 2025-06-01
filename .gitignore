@@ -8,12 +8,33 @@ firebase-setup.md
 SECURITY.md
 QUICK_START_SECURITY.md
 README.md
+TESTING_GUIDE.md
+
+# Test files and debugging (NEVER commit these)
+*test*.html
+*debug*.html
+*dev*.html
+create-*.html
+setup-*.html
+
+# Sensitive configuration files
+config-local.js
+firebase-config-*.js
+*.env
+.env.*
 
 # Node modules (nếu có)
 node_modules/
 
 # Log files
 *.log
+debug.log
+error.log
+
+# Temporary files
+temp/
+tmp/
+*.tmp
 
 # OS generated files
 .DS_Store
