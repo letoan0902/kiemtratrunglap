@@ -1098,12 +1098,9 @@
                     await this.saveFieldAssignments(modal);
                 });
 
-                // Allow modal to close when clicking overlay
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        modal.style.display = 'none';
-                        document.body.removeChild(modal);
-                    }
+                // Prevent modal from closing when clicking overlay - user must use close buttons only
+                modal.querySelector('.modal-content').addEventListener('click', (e) => {
+                    e.stopPropagation();
                 });
             }
 
@@ -1350,17 +1347,9 @@
                     closable: true
                 });
 
-                // Prevent modal from closing when clicking overlay
-                modal.addEventListener('click', (e) => {
+                // Prevent modal from closing when clicking overlay - user must use close buttons only
+                modal.querySelector('.modal-content').addEventListener('click', (e) => {
                     e.stopPropagation();
-                });
-
-                // Allow modal to close when clicking overlay
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        modal.style.display = 'none';
-                        document.body.removeChild(modal);
-                    }
                 });
 
                 document.getElementById('createUserForm').addEventListener('submit', async (e) => {
@@ -1484,17 +1473,9 @@
                     closable: true
                 });
 
-                // Prevent modal from closing when clicking overlay
-                modal.addEventListener('click', (e) => {
+                // Prevent modal from closing when clicking overlay - user must use close buttons only
+                modal.querySelector('.modal-content').addEventListener('click', (e) => {
                     e.stopPropagation();
-                });
-
-                // Allow modal to close when clicking overlay
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        modal.style.display = 'none';
-                        document.body.removeChild(modal);
-                    }
                 });
 
                 document.getElementById('addFieldForm').addEventListener('submit', async (e) => {
@@ -1588,17 +1569,9 @@
                     closable: true
                 });
 
-                // Prevent modal from closing when clicking overlay
-                modal.addEventListener('click', (e) => {
+                // Prevent modal from closing when clicking overlay - user must use close buttons only
+                modal.querySelector('.modal-content').addEventListener('click', (e) => {
                     e.stopPropagation();
-                });
-
-                // Allow modal to close when clicking overlay
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        modal.style.display = 'none';
-                        document.body.removeChild(modal);
-                    }
                 });
 
                 // Setup form submission
@@ -1700,17 +1673,9 @@
                     closable: true
                 });
 
-                // Prevent modal from closing when clicking overlay
-                modal.addEventListener('click', (e) => {
+                // Prevent modal from closing when clicking overlay - user must use close buttons only
+                modal.querySelector('.modal-content').addEventListener('click', (e) => {
                     e.stopPropagation();
-                });
-
-                // Allow modal to close when clicking overlay
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        modal.style.display = 'none';
-                        document.body.removeChild(modal);
-                    }
                 });
 
                 // Setup form submission

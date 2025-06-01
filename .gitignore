@@ -43,4 +43,63 @@ tmp/
 .Spotlight-V100
 .Trashes
 ehthumbs.db
-Thumbs.db 
+Thumbs.db
+
+# Dependencies and packages
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Production builds
+/build
+/dist
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+logs
+
+# Test files and temporary data
+create-test-data.html
+simple-test.html
+test-*.html
+debug-*.html
+
+# Sensitive configuration files
+config/
+secrets/
+private/
+
+# Backup files
+*.bak
+*.backup
+*.tmp
+
+# SECURITY: Firebase and Database files
+firestore.rules
+firebase-debug.log
+.firebase/
+DEPLOY_FIRESTORE_RULES.md
+firebase-adminsdk-*.json
+
+# SECURITY: API keys and credentials
+api-keys.js
+credentials.json
+service-account-*.json
+
+# SECURITY: Database exports
+database-export/
+*.sql
+*.db 
