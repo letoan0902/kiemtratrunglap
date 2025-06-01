@@ -325,12 +325,14 @@
 
     <!-- Application Scripts -->
     <script src="js/utils.js"></script>
-    <script src="js/config.js"></script>
     <script type="module">
-        // Import Firebase and auth system
+        // Import modules
+        import { configManager, rateLimiter } from './js/config.js';
         import { authSystem } from './js/auth.js';
 
-        // Make it globally available
+        // Make them globally available
+        window.configManager = configManager;
+        window.rateLimiter = rateLimiter;
         window.authSystem = authSystem;
 
         class AdminPanel {
