@@ -57,7 +57,7 @@
                     <h2 class="card-title">Quản lý Người dùng</h2>
                     <div style="display: flex; gap: 15px; align-items: center;">
                         <div class="search-container">
-                            <input type="text" id="userSearchBox" class="form-input search-input" placeholder="🔍 Tìm kiếm người dùng..." style="width: 250px; margin: 0;">
+                            <input type="text" id="userSearchBox" class="form-input search-input" placeholder="🔍 Tìm kiếm người dùng..." style="width: 250px; margin: 0;" autocomplete="off">
                             <button class="search-clear-btn" id="userSearchClear" title="Xóa tìm kiếm">×</button>
                         </div>
                         <button class="btn btn-primary" id="addUserBtn">➕ Thêm người dùng</button>
@@ -70,28 +70,28 @@
                         <div class="column-search-item">
                             <label>Tên:</label>
                             <div class="search-container">
-                                <input type="text" class="column-search-input" data-column="0" placeholder="Tìm theo tên...">
+                                <input type="text" class="column-search-input" data-column="0" placeholder="Tìm theo tên..." autocomplete="off">
                                 <button class="search-clear-btn" onclick="this.previousElementSibling.value=''; this.closest('.column-search-container').dispatchEvent(new Event('search'));">×</button>
                             </div>
                         </div>
                         <div class="column-search-item">
                             <label>Email:</label>
                             <div class="search-container">
-                                <input type="text" class="column-search-input" data-column="1" placeholder="Tìm theo email...">
+                                <input type="text" class="column-search-input" data-column="1" placeholder="Tìm theo email..." autocomplete="off">
                                 <button class="search-clear-btn" onclick="this.previousElementSibling.value=''; this.closest('.column-search-container').dispatchEvent(new Event('search'));">×</button>
                             </div>
                         </div>
                         <div class="column-search-item">
                             <label>Ngày tạo:</label>
                             <div class="search-container">
-                                <input type="text" class="column-search-input" data-column="3" placeholder="Tìm theo ngày...">
+                                <input type="text" class="column-search-input" data-column="3" placeholder="Tìm theo ngày..." autocomplete="off">
                                 <button class="search-clear-btn" onclick="this.previousElementSibling.value=''; this.closest('.column-search-container').dispatchEvent(new Event('search'));">×</button>
                             </div>
                         </div>
                         <div class="column-search-item">
                             <label>Tạo bởi:</label>
                             <div class="search-container">
-                                <input type="text" class="column-search-input" data-column="4" placeholder="Tìm theo người tạo...">
+                                <input type="text" class="column-search-input" data-column="4" placeholder="Tìm theo người tạo..." autocomplete="off">
                                 <button class="search-clear-btn" onclick="this.previousElementSibling.value=''; this.closest('.column-search-container').dispatchEvent(new Event('search'));">×</button>
                             </div>
                         </div>
@@ -115,7 +115,7 @@
                     <h2 class="card-title">Quản lý Trường Dữ liệu</h2>
                     <div style="display: flex; gap: 15px; align-items: center;">
                         <div class="search-container">
-                            <input type="text" id="fieldSearchBox" class="form-input search-input" placeholder="🔍 Tìm kiếm trường..." style="width: 250px; margin: 0;">
+                            <input type="text" id="fieldSearchBox" class="form-input search-input" placeholder="🔍 Tìm kiếm trường..." style="width: 250px; margin: 0;" autocomplete="off">
                             <button class="search-clear-btn" id="fieldSearchClear" title="Xóa tìm kiếm">×</button>
                         </div>
                         <button class="btn btn-primary" id="addFieldBtn">➕ Thêm trường</button>
@@ -128,28 +128,28 @@
                         <div class="column-search-item">
                             <label>Tên trường:</label>
                             <div class="search-container">
-                                <input type="text" class="column-search-input" data-column="0" placeholder="Tìm theo tên...">
+                                <input type="text" class="column-search-input" data-column="0" placeholder="Tìm theo tên..." autocomplete="off">
                                 <button class="search-clear-btn" onclick="this.previousElementSibling.value=''; this.closest('.column-search-container').dispatchEvent(new Event('search'));">×</button>
                             </div>
                         </div>
                         <div class="column-search-item">
                             <label>Mô tả:</label>
                             <div class="search-container">
-                                <input type="text" class="column-search-input" data-column="1" placeholder="Tìm theo mô tả...">
+                                <input type="text" class="column-search-input" data-column="1" placeholder="Tìm theo mô tả..." autocomplete="off">
                                 <button class="search-clear-btn" onclick="this.previousElementSibling.value=''; this.closest('.column-search-container').dispatchEvent(new Event('search'));">×</button>
                             </div>
                         </div>
                         <div class="column-search-item">
                             <label>Ngày tạo:</label>
                             <div class="search-container">
-                                <input type="text" class="column-search-input" data-column="4" placeholder="Tìm theo ngày...">
+                                <input type="text" class="column-search-input" data-column="4" placeholder="Tìm theo ngày..." autocomplete="off">
                                 <button class="search-clear-btn" onclick="this.previousElementSibling.value=''; this.closest('.column-search-container').dispatchEvent(new Event('search'));">×</button>
                             </div>
                         </div>
                         <div class="column-search-item">
                             <label>Tạo bởi:</label>
                             <div class="search-container">
-                                <input type="text" class="column-search-input" data-column="5" placeholder="Tìm theo người tạo...">
+                                <input type="text" class="column-search-input" data-column="5" placeholder="Tìm theo người tạo..." autocomplete="off">
                                 <button class="search-clear-btn" onclick="this.previousElementSibling.value=''; this.closest('.column-search-container').dispatchEvent(new Event('search'));">×</button>
                             </div>
                         </div>
@@ -173,7 +173,7 @@
                     <h2 class="card-title">Xem Dữ liệu Theo Trường</h2>
                     <div style="display: flex; gap: 15px; align-items: center;">
                         <div class="search-container">
-                            <input type="text" id="dataSearchBox" class="form-input search-input" placeholder="🔍 Tìm kiếm dữ liệu..." style="width: 250px; margin: 0;">
+                            <input type="text" id="dataSearchBox" class="form-input search-input" placeholder="🔍 Tìm kiếm dữ liệu..." style="width: 250px; margin: 0;" autocomplete="off">
                             <button class="search-clear-btn" id="dataSearchClear" title="Xóa tìm kiếm">×</button>
                         </div>
                         <div class="custom-select" id="fieldSelectContainer">
@@ -194,21 +194,21 @@
                         <div class="column-search-item">
                             <label>Dữ liệu:</label>
                             <div class="search-container">
-                                <input type="text" class="column-search-input" data-column="0" placeholder="Tìm theo dữ liệu...">
+                                <input type="text" class="column-search-input" data-column="0" placeholder="Tìm theo dữ liệu..." autocomplete="off">
                                 <button class="search-clear-btn" onclick="this.previousElementSibling.value=''; this.closest('.column-search-container').dispatchEvent(new Event('search'));">×</button>
                             </div>
                         </div>
                         <div class="column-search-item">
                             <label>Thêm bởi:</label>
                             <div class="search-container">
-                                <input type="text" class="column-search-input" data-column="1" placeholder="Tìm theo người thêm...">
+                                <input type="text" class="column-search-input" data-column="1" placeholder="Tìm theo người thêm..." autocomplete="off">
                                 <button class="search-clear-btn" onclick="this.previousElementSibling.value=''; this.closest('.column-search-container').dispatchEvent(new Event('search'));">×</button>
                             </div>
                         </div>
                         <div class="column-search-item">
                             <label>Ngày thêm:</label>
                             <div class="search-container">
-                                <input type="text" class="column-search-input" data-column="2" placeholder="Tìm theo ngày...">
+                                <input type="text" class="column-search-input" data-column="2" placeholder="Tìm theo ngày..." autocomplete="off">
                                 <button class="search-clear-btn" onclick="this.previousElementSibling.value=''; this.closest('.column-search-container').dispatchEvent(new Event('search'));">×</button>
                             </div>
                         </div>
@@ -864,6 +864,10 @@
 
             async loadUsers() {
                 const users = await authSystem.getUsers();
+                
+                // Sort users by creation date - newest first
+                users.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                
                 const container = document.getElementById('usersTableContainer');
 
                 const columns = [
@@ -896,6 +900,10 @@
 
             async loadFields() {
                 const fields = await authSystem.getAllFieldsForAdmin();
+                
+                // Sort fields by creation date - newest first
+                fields.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                
                 const users = await authSystem.getUsers();
                 const container = document.getElementById('fieldsTableContainer');
 
@@ -1020,7 +1028,7 @@
                     title: `Quản lý gán trường: ${field.name}`,
                     content: `
                         <div>
-                            <input type="text" id="userSearchInput" class="search-input" placeholder="🔍 Tìm kiếm người dùng...">
+                            <input type="text" id="userSearchInput" class="search-input" placeholder="🔍 Tìm kiếm người dùng..." autocomplete="off">
                             
                             <div class="field-assignment-container">
                                 <div class="field-assignment-column">
@@ -1090,13 +1098,12 @@
                     await this.saveFieldAssignments(modal);
                 });
 
-                // Prevent modal from closing when clicking overlay
+                // Allow modal to close when clicking overlay
                 modal.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                });
-
-                modal.querySelector('.modal-content').addEventListener('click', (e) => {
-                    e.stopPropagation();
+                    if (e.target === modal) {
+                        modal.style.display = 'none';
+                        document.body.removeChild(modal);
+                    }
                 });
             }
 
@@ -1282,7 +1289,7 @@
                         ...item,
                         addedByUsername: user ? user.username || user.name : item.addedBy
                     };
-                });
+                }).sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt));
                 
                 const columns = [
                     { key: 'value', title: 'Dữ liệu', searchable: true },
@@ -1318,19 +1325,19 @@
                         <form id="createUserForm" autocomplete="off">
                             <div class="form-group">
                                 <label for="userUsername">Tên đăng nhập</label>
-                                <input type="text" id="userUsername" class="form-input" placeholder="Nhập tên đăng nhập" required autocomplete="new-password">
+                                <input type="text" id="userUsername" class="form-input" placeholder="Nhập tên đăng nhập" required autocomplete="off">
                                 <div class="field-error" id="usernameError"></div>
                             </div>
                             
                             <div class="form-group">
                                 <label for="userEmail">Email (tùy chọn)</label>
-                                <input type="text" id="userEmail" class="form-input" placeholder="Nhập email hoặc để trống" autocomplete="new-password">
+                                <input type="text" id="userEmail" class="form-input" placeholder="Nhập email hoặc để trống" autocomplete="off">
                                 <div class="field-error" id="emailError"></div>
                             </div>
                             
                             <div class="form-group">
                                 <label for="userPassword">Mật khẩu (để trống sẽ dùng 123456)</label>
-                                <input type="password" id="userPassword" class="form-input" placeholder="Nhập mật khẩu hoặc để trống" autocomplete="new-password">
+                                <input type="password" id="userPassword" class="form-input" placeholder="Nhập mật khẩu hoặc để trống" autocomplete="off">
                                 <div class="field-error" id="passwordError"></div>
                             </div>
                             
@@ -1348,8 +1355,12 @@
                     e.stopPropagation();
                 });
 
-                modal.querySelector('.modal-content').addEventListener('click', (e) => {
-                    e.stopPropagation();
+                // Allow modal to close when clicking overlay
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.style.display = 'none';
+                        document.body.removeChild(modal);
+                    }
                 });
 
                 document.getElementById('createUserForm').addEventListener('submit', async (e) => {
@@ -1451,7 +1462,7 @@
                         <form id="addFieldForm">
                             <div class="form-group">
                                 <label>Tên trường</label>
-                                <input type="text" id="fieldName" class="form-input" required>
+                                <input type="text" id="fieldName" class="form-input" required autocomplete="off">
                             </div>
                             <div class="form-group">
                                 <label>Mô tả</label>
@@ -1478,8 +1489,12 @@
                     e.stopPropagation();
                 });
 
-                modal.querySelector('.modal-content').addEventListener('click', (e) => {
-                    e.stopPropagation();
+                // Allow modal to close when clicking overlay
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.style.display = 'none';
+                        document.body.removeChild(modal);
+                    }
                 });
 
                 document.getElementById('addFieldForm').addEventListener('submit', async (e) => {
@@ -1551,17 +1566,17 @@
                         <form id="editUserForm">
                             <div class="form-group">
                                 <label for="editUserUsername">Tên đăng nhập</label>
-                                <input type="text" id="editUserUsername" class="form-input" value="${user.username || user.email}" required>
+                                <input type="text" id="editUserUsername" class="form-input" value="${user.username || user.email}" required autocomplete="off">
                             </div>
                             
                             <div class="form-group">
                                 <label for="editUserEmail">Email</label>
-                                <input type="text" id="editUserEmail" class="form-input" value="${user.email || ''}" placeholder="Email (tùy chọn)">
+                                <input type="text" id="editUserEmail" class="form-input" value="${user.email || ''}" placeholder="Email (tùy chọn)" autocomplete="off">
                             </div>
                             
                             <div class="form-group">
                                 <label for="editUserPassword">Mật khẩu mới (để trống nếu không đổi)</label>
-                                <input type="password" id="editUserPassword" class="form-input" placeholder="Nhập mật khẩu mới">
+                                <input type="password" id="editUserPassword" class="form-input" placeholder="Nhập mật khẩu mới" autocomplete="off">
                             </div>
                             
                             <div class="btn-group">
@@ -1578,13 +1593,18 @@
                     e.stopPropagation();
                 });
 
-                modal.querySelector('.modal-content').addEventListener('click', (e) => {
-                    e.stopPropagation();
+                // Allow modal to close when clicking overlay
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.style.display = 'none';
+                        document.body.removeChild(modal);
+                    }
                 });
 
+                // Setup form submission
                 document.getElementById('editUserForm').addEventListener('submit', async (e) => {
                     e.preventDefault();
-                    await this.handleEditUser(modal, userId);
+                    await this.handleEditUser(userId, modal);
                 });
             }
 
@@ -1657,7 +1677,7 @@
                         <form id="editFieldForm">
                             <div class="form-group">
                                 <label>Tên trường</label>
-                                <input type="text" id="editFieldName" class="form-input" value="${field.name}" required>
+                                <input type="text" id="editFieldName" class="form-input" value="${field.name}" required autocomplete="off">
                             </div>
                             <div class="form-group">
                                 <label>Mô tả</label>
@@ -1685,13 +1705,18 @@
                     e.stopPropagation();
                 });
 
-                modal.querySelector('.modal-content').addEventListener('click', (e) => {
-                    e.stopPropagation();
+                // Allow modal to close when clicking overlay
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.style.display = 'none';
+                        document.body.removeChild(modal);
+                    }
                 });
 
+                // Setup form submission
                 document.getElementById('editFieldForm').addEventListener('submit', async (e) => {
                     e.preventDefault();
-                    await this.handleEditField(modal, fieldId);
+                    await this.handleEditField(fieldId, modal);
                 });
             }
 

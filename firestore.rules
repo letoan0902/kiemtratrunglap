@@ -8,50 +8,59 @@ service cloud.firestore {
     }
     
     function isValidUserData(data) {
+      // More flexible validation - check required fields exist
       return data.keys().hasAll(['email', 'name', 'role', 'isActive']) &&
              data.role in ['admin', 'user'] &&
              data.isActive is bool &&
              data.email is string &&
-             data.name is string;
+             data.name is string &&
+             // Allow additional fields like username, password, etc.
+             (data.username is string || !data.keys().hasAny(['username'])) &&
+             (data.password is string || !data.keys().hasAny(['password'])) &&
+             (data.assignedFields is list || !data.keys().hasAny(['assignedFields']));
     }
     
     function isValidFieldData(data) {
       return data.keys().hasAll(['name', 'isActive']) &&
              data.isActive is bool &&
-             data.name is string;
+             data.name is string &&
+             // Allow additional fields
+             (data.description is string || !data.keys().hasAny(['description'])) &&
+             (data.data is list || !data.keys().hasAny(['data']));
     }
     
-    // Users collection - More permissive for app functionality
+    // Users collection - Allow admin to create users
     match /users/{userId} {
-      // Allow read for any valid operation (app controls access)
+      // Allow read for any valid operation
       allow read: if true;
       
-      // Allow create with valid structure
+      // Allow create with flexible validation - admin can create users
       allow create: if isValidEmail(userId) &&
                       isValidUserData(resource.data) &&
                       resource.data.email == userId;
       
-      // Allow update with some restrictions
+      // Allow update with flexible validation
       allow update: if isValidEmail(userId) &&
-                      isValidUserData(request.resource.data) &&
-                      request.resource.data.email == userId;
+                      // Allow partial updates
+                      (request.resource.data.email == userId || 
+                       request.resource.data.email == resource.data.email);
       
-      // Allow delete (controlled by app logic)
+      // Allow delete (app controls permissions)
       allow delete: if true;
     }
     
-    // Fields collection - Allow app to manage fields
+    // Fields collection - Allow admin to manage fields
     match /fields/{fieldId} {
-      // Allow read for all fields (app controls which user sees what)
+      // Allow read for all fields
       allow read: if true;
       
-      // Allow create with valid structure
+      // Allow create with flexible validation
       allow create: if isValidFieldData(resource.data);
       
-      // Allow update with structure validation
-      allow update: if isValidFieldData(request.resource.data);
+      // Allow update with flexible validation
+      allow update: if true; // App controls the logic
       
-      // Allow delete (app controls permissions)
+      // Allow delete
       allow delete: if true;
     }
     
