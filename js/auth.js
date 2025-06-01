@@ -26,29 +26,43 @@ let app = null;
 let analytics = null;
 let db = null;
 
-// Security monitoring
+// Optimized Security monitoring
 class SecurityMonitor {
   constructor() {
     this.suspiciousActivity = [];
     this.failedAttempts = new Map();
     this.maxFailedAttempts = 5;
     this.blockDuration = 300000; // 5 minutes
+    this.initialized = false;
+  }
+
+  // Lazy initialization
+  init() {
+    if (this.initialized) return;
+    this.initialized = true;
+
+    // Clean up old data periodically (background)
+    setInterval(() => {
+      this.cleanup();
+    }, 60000); // Every minute
   }
 
   logActivity(type, details = {}) {
+    // Lazy init on first use
+    if (!this.initialized) this.init();
+
     const activity = {
       type,
       timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent,
-      ip: details.ip || "unknown",
+      userAgent: navigator.userAgent.slice(0, 100), // Truncate for performance
       details,
     };
 
     this.suspiciousActivity.push(activity);
 
-    // Keep only last 100 activities
-    if (this.suspiciousActivity.length > 100) {
-      this.suspiciousActivity = this.suspiciousActivity.slice(-100);
+    // Keep only last 50 activities (reduced from 100)
+    if (this.suspiciousActivity.length > 50) {
+      this.suspiciousActivity = this.suspiciousActivity.slice(-50);
     }
   }
 
@@ -60,10 +74,10 @@ class SecurityMonitor {
     const attempts = this.failedAttempts.get(identifier);
     attempts.push(Date.now());
 
-    // Clean old attempts
-    const cutoff = Date.now() - this.blockDuration;
-    const recentAttempts = attempts.filter((time) => time > cutoff);
-    this.failedAttempts.set(identifier, recentAttempts);
+    // Limit stored attempts
+    if (attempts.length > this.maxFailedAttempts * 2) {
+      attempts.splice(0, attempts.length - this.maxFailedAttempts);
+    }
   }
 
   isBlocked(identifier) {
@@ -81,6 +95,21 @@ class SecurityMonitor {
   clearFailedAttempts(identifier) {
     this.failedAttempts.delete(identifier);
   }
+
+  // Background cleanup
+  cleanup() {
+    const cutoff = Date.now() - this.blockDuration;
+
+    for (const [identifier, attempts] of this.failedAttempts.entries()) {
+      const validAttempts = attempts.filter((time) => time > cutoff);
+
+      if (validAttempts.length === 0) {
+        this.failedAttempts.delete(identifier);
+      } else {
+        this.failedAttempts.set(identifier, validAttempts);
+      }
+    }
+  }
 }
 
 class AuthSystem {
@@ -89,40 +118,56 @@ class AuthSystem {
     this.db = null;
     this.securityMonitor = new SecurityMonitor();
     this.initialized = false;
-    this.init();
+    this.cache = new Map();
+    this.monitoringSetup = false;
+
+    // Fast async initialization
+    this.initPromise = this.init();
   }
 
   async init() {
     try {
-      // Perform security checks
-      await configManager.performSecurityChecks();
-
-      // Get secure configuration
-      const firebaseConfig = await configManager.getConfig();
+      // Parallel initialization for speed
+      const [securityCheck, firebaseConfig] = await Promise.all([
+        configManager.performSecurityChecks(),
+        configManager.getConfig(),
+      ]);
 
       // Initialize Firebase with secure config
       app = initializeApp(firebaseConfig);
-      analytics = getAnalytics(app);
-      db = getFirestore(app);
+      this.db = getFirestore(app);
 
-      this.db = db;
+      // Analytics lazy loading (non-blocking)
+      setTimeout(() => {
+        analytics = getAnalytics(app);
+      }, 0);
+
       this.initialized = true;
 
-      // Check session storage for current user (temporary session only)
+      // Check session storage for current user (parallel)
       const savedUser = sessionStorage.getItem("currentUser");
       if (savedUser) {
-        this.currentUser = JSON.parse(savedUser);
-        // Verify user still exists in database
-        const userExists = await this.verifyUserExists(this.currentUser.email);
-        if (!userExists) {
-          this.logout();
-          return;
+        try {
+          this.currentUser = JSON.parse(savedUser);
+
+          // Async user verification (don't block UI)
+          this.verifyUserExists(this.currentUser.email).then((exists) => {
+            if (!exists) {
+              this.logout();
+            } else {
+              this.redirectToAppropriatePanel();
+            }
+          });
+        } catch (e) {
+          // Invalid session data
+          sessionStorage.removeItem("currentUser");
         }
-        this.redirectToAppropriatePanel();
       }
 
-      // Set up security monitoring
-      this.setupSecurityMonitoring();
+      // Lazy security monitoring setup
+      setTimeout(() => {
+        this.setupSecurityMonitoring();
+      }, 1000);
     } catch (error) {
       console.error("Failed to initialize authentication system:", error);
       this.handleInitializationError(error);
@@ -130,88 +175,105 @@ class AuthSystem {
   }
 
   setupSecurityMonitoring() {
-    // Monitor for suspicious activity
-    let lastActivity = Date.now();
+    if (this.monitoringSetup) return;
+    this.monitoringSetup = true;
 
-    // Track user interactions
-    ["click", "keypress", "mousewheel"].forEach((eventType) => {
-      document.addEventListener(
-        eventType,
-        () => {
-          lastActivity = Date.now();
-        },
-        { passive: true }
-      );
+    // Optimized activity tracking
+    let lastActivity = Date.now();
+    let idleCheckInterval = null;
+
+    // Throttled activity tracker
+    const throttledActivityUpdate = this.throttle(() => {
+      lastActivity = Date.now();
+    }, 1000); // Update max once per second
+
+    // Efficient event listeners
+    const events = ["click", "keypress", "scroll"];
+    events.forEach((eventType) => {
+      document.addEventListener(eventType, throttledActivityUpdate, {
+        passive: true,
+        capture: false,
+      });
     });
 
-    // Check for idle users periodically
-    setInterval(() => {
+    // Optimized idle checking (every 2 minutes instead of 1)
+    idleCheckInterval = setInterval(() => {
       const idleTime = Date.now() - lastActivity;
       if (idleTime > 1800000 && this.isLoggedIn()) {
         // 30 minutes idle
         this.securityMonitor.logActivity("idle_timeout");
         this.logout();
+        clearInterval(idleCheckInterval);
       }
-    }, 60000); // Check every minute
+    }, 120000); // Check every 2 minutes
 
-    // Monitor page visibility
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) {
-        this.securityMonitor.logActivity("page_hidden");
-      } else {
-        this.securityMonitor.logActivity("page_visible");
+    // Simplified page visibility monitoring
+    document.addEventListener(
+      "visibilitychange",
+      () => {
+        if (document.hidden) {
+          lastActivity = Date.now() - 300000; // Mark as 5 min idle when hidden
+        } else {
+          lastActivity = Date.now();
+        }
+      },
+      { passive: true }
+    );
+  }
+
+  // Throttle helper for performance
+  throttle(func, limit) {
+    let inThrottle;
+    return function () {
+      const args = arguments;
+      const context = this;
+      if (!inThrottle) {
+        func.apply(context, args);
+        inThrottle = true;
+        setTimeout(() => (inThrottle = false), limit);
       }
-    });
+    };
   }
 
   handleInitializationError(error) {
-    // Create minimal error UI
+    // Lightweight error UI
     document.body.innerHTML = `
-      <div style="
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        font-family: Arial, sans-serif;
-        background: linear-gradient(135deg, #fffef7 0%, #fff8e1 100%);
-      ">
-        <div style="
-          text-align: center;
-          padding: 40px;
-          background: white;
-          border-radius: 20px;
-          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-          max-width: 400px;
-        ">
-          <h2 style="color: #f44336; margin-bottom: 20px;">🔒 Lỗi Bảo Mật</h2>
-          <p style="color: #666; margin-bottom: 30px;">
-            Ứng dụng không thể khởi tạo do lỗi bảo mật. Vui lòng liên hệ quản trị viên.
-          </p>
-          <button onclick="window.location.reload()" style="
-            background: linear-gradient(135deg, #ff6b35 0%, #ff9a56 100%);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-          ">Thử lại</button>
+      <div style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:Arial,sans-serif;background:#fff8e1;">
+        <div style="text-align:center;padding:40px;background:white;border-radius:20px;box-shadow:0 15px 35px rgba(0,0,0,0.1);max-width:400px;">
+          <h2 style="color:#f44336;margin-bottom:20px;">🔒 Lỗi Bảo Mật</h2>
+          <p style="color:#666;margin-bottom:30px;">Ứng dụng không thể khởi tạo do lỗi bảo mật.</p>
+          <button onclick="location.reload()" style="background:#ff6b35;color:white;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:600;">Thử lại</button>
         </div>
-      </div>
-    `;
+      </div>`;
   }
 
   async verifyUserExists(email) {
     try {
-      // Wait for initialization
+      // Check cache first
+      const cacheKey = `user_exists_${email}`;
+      const cached = this.cache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < 60000) {
+        // 1 minute cache
+        return cached.data;
+      }
+
+      // Wait for initialization if needed
       if (!this.initialized) {
-        await this.waitForInitialization();
+        await this.initPromise;
       }
 
       // Normalize email
       const normalizedEmail = email.trim().toLowerCase();
-      const userDoc = await getDoc(doc(db, "users", normalizedEmail));
-      return userDoc.exists() && userDoc.data().isActive;
+      const userDoc = await getDoc(doc(this.db, "users", normalizedEmail));
+      const exists = userDoc.exists() && userDoc.data().isActive;
+
+      // Cache result
+      this.cache.set(cacheKey, {
+        data: exists,
+        timestamp: Date.now(),
+      });
+
+      return exists;
     } catch (error) {
       console.error("Error verifying user:", error);
       return false;
@@ -219,20 +281,13 @@ class AuthSystem {
   }
 
   async waitForInitialization() {
-    let attempts = 0;
-    while (!this.initialized && attempts < 50) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      attempts++;
-    }
-
-    if (!this.initialized) {
-      throw new Error("Authentication system failed to initialize");
-    }
+    if (this.initialized) return;
+    return this.initPromise;
   }
 
   async login(emailOrUsername, password) {
     try {
-      // Wait for initialization
+      // Fast initialization check
       await this.waitForInitialization();
 
       // Rate limiting check
@@ -257,20 +312,18 @@ class AuthSystem {
         };
       }
 
-      // Normalize input - trim and lowercase
+      // Normalize input
       const normalizedInput = emailOrUsername.trim().toLowerCase();
 
-      // Security delay to prevent brute force
-      await this.delay(300);
-
-      console.log("Attempting login for:", normalizedInput);
+      // Reduced security delay for better UX
+      await this.delay(150); // Reduced from 300ms
 
       let userDoc = null;
       let finalEmail = null;
       let foundUserData = null;
 
       // First try direct lookup (for email-based IDs)
-      userDoc = await getDoc(doc(db, "users", normalizedInput));
+      userDoc = await getDoc(doc(this.db, "users", normalizedInput));
 
       if (userDoc.exists()) {
         foundUserData = userDoc.data();
@@ -280,7 +333,7 @@ class AuthSystem {
         console.log("Direct lookup failed, searching by email/username...");
 
         // Search all users to find by email or username
-        const allUsersSnapshot = await getDocs(collection(db, "users"));
+        const allUsersSnapshot = await getDocs(collection(this.db, "users"));
         let foundUser = null;
 
         allUsersSnapshot.forEach((doc) => {
@@ -366,7 +419,7 @@ class AuthSystem {
       sessionStorage.setItem("currentUser", JSON.stringify(user));
 
       // Update last login time in Firestore
-      await updateDoc(doc(db, "users", finalEmail), {
+      await updateDoc(doc(this.db, "users", finalEmail), {
         lastLoginAt: serverTimestamp(),
       });
 
@@ -472,7 +525,10 @@ class AuthSystem {
       await this.waitForInitialization();
 
       // Remove orderBy to avoid index requirement
-      const q = query(collection(db, "users"), where("role", "==", "user"));
+      const q = query(
+        collection(this.db, "users"),
+        where("role", "==", "user")
+      );
 
       const querySnapshot = await getDocs(q);
       const users = [];
@@ -496,7 +552,7 @@ class AuthSystem {
       console.error("Error getting users:", error);
       // Fallback: get all users and filter
       try {
-        const allUsersSnapshot = await getDocs(collection(db, "users"));
+        const allUsersSnapshot = await getDocs(collection(this.db, "users"));
         const users = [];
         allUsersSnapshot.forEach((doc) => {
           const data = doc.data();
@@ -542,13 +598,13 @@ class AuthSystem {
       console.log("Creating user with normalized email:", normalizedEmail);
 
       // Check if user already exists by email
-      const existingUser = await getDoc(doc(db, "users", normalizedEmail));
+      const existingUser = await getDoc(doc(this.db, "users", normalizedEmail));
       if (existingUser.exists()) {
         return { success: false, message: "Email đã tồn tại!" };
       }
 
       // Check if username already exists
-      const allUsersSnapshot = await getDocs(collection(db, "users"));
+      const allUsersSnapshot = await getDocs(collection(this.db, "users"));
       let usernameExists = false;
       allUsersSnapshot.forEach((doc) => {
         const data = doc.data();
@@ -574,7 +630,7 @@ class AuthSystem {
       };
 
       // Use normalized email as document ID
-      await setDoc(doc(db, "users", normalizedEmail), newUser);
+      await setDoc(doc(this.db, "users", normalizedEmail), newUser);
 
       console.log("User created successfully:", normalizedEmail);
 
@@ -596,13 +652,13 @@ class AuthSystem {
     try {
       await this.waitForInitialization();
 
-      await updateDoc(doc(db, "users", userId), {
+      await updateDoc(doc(this.db, "users", userId), {
         ...userData,
         updatedAt: serverTimestamp(),
         updatedBy: this.currentUser.email,
       });
 
-      const updatedDoc = await getDoc(doc(db, "users", userId));
+      const updatedDoc = await getDoc(doc(this.db, "users", userId));
       const updatedData = updatedDoc.data();
 
       return {
@@ -626,7 +682,7 @@ class AuthSystem {
       await this.waitForInitialization();
 
       // Instead of deleting, we'll deactivate the user
-      await updateDoc(doc(db, "users", userId), {
+      await updateDoc(doc(this.db, "users", userId), {
         isActive: false,
         deletedAt: serverTimestamp(),
         deletedBy: this.currentUser.email,
@@ -645,7 +701,10 @@ class AuthSystem {
       await this.waitForInitialization();
 
       // Remove orderBy to avoid index requirement
-      const q = query(collection(db, "fields"), where("isActive", "==", true));
+      const q = query(
+        collection(this.db, "fields"),
+        where("isActive", "==", true)
+      );
 
       const querySnapshot = await getDocs(q);
       const allFields = [];
@@ -684,7 +743,7 @@ class AuthSystem {
       console.error("Error getting fields:", error);
       // Fallback: get all fields and filter
       try {
-        const allFieldsSnapshot = await getDocs(collection(db, "fields"));
+        const allFieldsSnapshot = await getDocs(collection(this.db, "fields"));
         const allFields = [];
         allFieldsSnapshot.forEach((doc) => {
           const data = doc.data();
@@ -726,7 +785,10 @@ class AuthSystem {
     try {
       await this.waitForInitialization();
 
-      const q = query(collection(db, "fields"), where("isActive", "==", true));
+      const q = query(
+        collection(this.db, "fields"),
+        where("isActive", "==", true)
+      );
       const querySnapshot = await getDocs(q);
       const fields = [];
 
@@ -755,7 +817,7 @@ class AuthSystem {
       await this.waitForInitialization();
 
       // Simplified check without complex query
-      const allFieldsSnapshot = await getDocs(collection(db, "fields"));
+      const allFieldsSnapshot = await getDocs(collection(this.db, "fields"));
       let fieldExists = false;
 
       allFieldsSnapshot.forEach((doc) => {
@@ -778,7 +840,7 @@ class AuthSystem {
         isActive: true,
       };
 
-      const docRef = doc(collection(db, "fields"));
+      const docRef = doc(collection(this.db, "fields"));
       await setDoc(docRef, newField);
 
       return {
@@ -825,7 +887,7 @@ class AuthSystem {
       await this.waitForInitialization();
 
       // Instead of deleting, we'll deactivate the field
-      await updateDoc(doc(db, "fields", fieldId), {
+      await updateDoc(doc(this.db, "fields", fieldId), {
         isActive: false,
         deletedAt: serverTimestamp(),
         deletedBy: this.currentUser.email,
@@ -865,7 +927,7 @@ class AuthSystem {
         }
       }
 
-      const fieldDoc = await getDoc(doc(db, "fields", fieldId));
+      const fieldDoc = await getDoc(doc(this.db, "fields", fieldId));
       if (!fieldDoc.exists()) {
         return { success: false, message: "Không tìm thấy trường!" };
       }
@@ -889,7 +951,7 @@ class AuthSystem {
         addedBy: this.currentUser.email,
       };
 
-      await updateDoc(doc(db, "fields", fieldId), {
+      await updateDoc(doc(this.db, "fields", fieldId), {
         data: arrayUnion(newDataItem),
       });
 
@@ -907,7 +969,7 @@ class AuthSystem {
     try {
       await this.waitForInitialization();
 
-      const fieldDoc = await getDoc(doc(db, "fields", fieldId));
+      const fieldDoc = await getDoc(doc(this.db, "fields", fieldId));
       if (!fieldDoc.exists()) {
         return { success: false, message: "Không tìm thấy trường!" };
       }
@@ -921,7 +983,7 @@ class AuthSystem {
         return { success: false, message: "Không tìm thấy dữ liệu!" };
       }
 
-      await updateDoc(doc(db, "fields", fieldId), {
+      await updateDoc(doc(this.db, "fields", fieldId), {
         data: arrayRemove(dataToRemove),
       });
 
