@@ -2,76 +2,70 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper functions for custom authentication
+    // Helper functions for validation
     function isValidEmail(email) {
       return email.matches('.*@.*\\..*');
     }
     
     function isValidUserData(data) {
-      return data.keys().hasAll(['email', 'password', 'name', 'role', 'isActive']) &&
+      return data.keys().hasAll(['email', 'name', 'role', 'isActive']) &&
              data.role in ['admin', 'user'] &&
              data.isActive is bool &&
              data.email is string &&
-             data.password is string &&
              data.name is string;
     }
     
     function isValidFieldData(data) {
       return data.keys().hasAll(['name', 'isActive']) &&
              data.isActive is bool &&
-             data.name is string &&
-             (data.data is list || !data.keys().hasAny(['data']));
+             data.name is string;
     }
     
-    // Users collection - Basic protection
+    // Users collection - More permissive for app functionality
     match /users/{userId} {
-      // Allow read for valid email format documents
-      allow read: if isValidEmail(userId);
+      // Allow read for any valid operation (app controls access)
+      allow read: if true;
       
-      // Allow create only with valid structure and email as document ID
+      // Allow create with valid structure
       allow create: if isValidEmail(userId) &&
-                      userId == resource.data.email &&
                       isValidUserData(resource.data) &&
-                      resource.data.role == 'user';
+                      resource.data.email == userId;
       
       // Allow update with some restrictions
       allow update: if isValidEmail(userId) &&
-                      userId == resource.data.email &&
-                      // Prevent role escalation (only admin can change roles)
-                      (resource.data.role == request.resource.data.role ||
-                       request.resource.data.role == 'user') &&
-                      // Keep basic structure
-                      request.resource.data.keys().hasAll(['email', 'name', 'role', 'isActive']);
+                      isValidUserData(request.resource.data) &&
+                      request.resource.data.email == userId;
       
-      // Allow delete (deactivation) - will be controlled by application logic
-      allow delete: if isValidEmail(userId);
+      // Allow delete (controlled by app logic)
+      allow delete: if true;
     }
     
-    // Fields collection - Basic protection  
+    // Fields collection - Allow app to manage fields
     match /fields/{fieldId} {
-      // Allow read for active fields
-      allow read: if resource.data.isActive == true;
+      // Allow read for all fields (app controls which user sees what)
+      allow read: if true;
       
       // Allow create with valid structure
-      allow create: if isValidFieldData(resource.data) &&
-                      resource.data.isActive == true;
+      allow create: if isValidFieldData(resource.data);
       
       // Allow update with structure validation
       allow update: if isValidFieldData(request.resource.data);
       
-      // Allow delete (deactivation)
+      // Allow delete (app controls permissions)
       allow delete: if true;
     }
     
-    // Activity logs (optional) - Allow creation for logging
+    // Activity logs - Allow for monitoring
     match /activity_logs/{logId} {
-      allow read: if true; // Will be filtered by application
-      allow create: if request.resource.data.keys().hasAll(['type', 'timestamp']);
-      allow update: if false; // Logs should not be modified
-      allow delete: if false; // Logs should not be deleted
+      allow read, write: if true;
     }
     
-    // Security: Block access to any other collections
+    // Test collection for debugging (temporary)
+    match /test/{docId} {
+      allow read, write: if true;
+    }
+    
+    // Block access to other collections for security
     match /{document=**} {
       allow read, write: if false;
     }

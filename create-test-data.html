@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Test Data</title>
+</head>
+<body>
+    <h1>Creating Test Data...</h1>
+    <div id="status">Initializing...</div>
+
+    <script type="module">
+        // Import Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
+        import {
+            getFirestore,
+            collection,
+            doc,
+            setDoc,
+            getDoc,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+
+        // Import config
+        import { configManager } from './js/config.js';
+
+        const statusDiv = document.getElementById('status');
+
+        async function updateStatus(message) {
+            statusDiv.innerHTML += '<br>' + message;
+            console.log(message);
+        }
+
+        async function createTestData() {
+            try {
+                await updateStatus('🔧 Loading Firebase configuration...');
+                
+                // Get Firebase config
+                const firebaseConfig = await configManager.getConfig();
+                
+                // Initialize Firebase
+                const app = initializeApp(firebaseConfig);
+                const db = getFirestore(app);
+                
+                await updateStatus('✅ Firebase initialized successfully');
+
+                // Create admin user
+                await updateStatus('👤 Creating admin user...');
+                const adminData = {
+                    email: 'admin@test.com',
+                    username: 'admin',
+                    password: 'admin123',
+                    name: 'Administrator',
+                    role: 'admin',
+                    isActive: true,
+                    createdAt: serverTimestamp(),
+                    createdBy: 'system'
+                };
+
+                await setDoc(doc(db, 'users', 'admin@test.com'), adminData);
+                await updateStatus('✅ Admin user created: admin@test.com / admin123');
+
+                // Create test user
+                await updateStatus('👥 Creating test user...');
+                const userData = {
+                    email: 'user@test.com',
+                    username: 'testuser',
+                    password: 'user123',
+                    name: 'Test User',
+                    role: 'user',
+                    isActive: true,
+                    assignedFields: [], // Will be assigned after fields are created
+                    createdAt: serverTimestamp(),
+                    createdBy: 'admin@test.com'
+                };
+
+                await setDoc(doc(db, 'users', 'user@test.com'), userData);
+                await updateStatus('✅ Test user created: user@test.com / user123');
+
+                // Create test fields
+                await updateStatus('📊 Creating test fields...');
+                
+                const fields = [
+                    {
+                        name: 'Test Field 1',
+                        description: 'This is a test field for demonstration',
+                        data: [
+                            {
+                                id: 'data_1',
+                                value: 'Sample Data 1',
+                                addedAt: new Date().toISOString(),
+                                addedBy: 'admin@test.com'
+                            },
+                            {
+                                id: 'data_2', 
+                                value: 'Sample Data 2',
+                                addedAt: new Date().toISOString(),
+                                addedBy: 'admin@test.com'
+                            }
+                        ],
+                        isActive: true,
+                        createdAt: serverTimestamp(),
+                        createdBy: 'admin@test.com'
+                    },
+                    {
+                        name: 'Test Field 2',
+                        description: 'Another test field',
+                        data: [],
+                        isActive: true,
+                        createdAt: serverTimestamp(),
+                        createdBy: 'admin@test.com'
+                    }
+                ];
+
+                const fieldIds = [];
+                for (let i = 0; i < fields.length; i++) {
+                    const fieldId = `field_${Date.now()}_${i}`;
+                    fieldIds.push(fieldId);
+                    await setDoc(doc(db, 'fields', fieldId), fields[i]);
+                    await updateStatus(`✅ Created field: ${fields[i].name}`);
+                }
+
+                // Update test user with assigned fields
+                await updateStatus('🔗 Assigning fields to test user...');
+                await setDoc(doc(db, 'users', 'user@test.com'), {
+                    ...userData,
+                    assignedFields: fieldIds
+                });
+                await updateStatus('✅ Fields assigned to test user');
+
+                await updateStatus('🎉 All test data created successfully!');
+                await updateStatus('📋 Login credentials:');
+                await updateStatus('   Admin: admin@test.com / admin123');
+                await updateStatus('   User: user@test.com / user123');
+                
+            } catch (error) {
+                await updateStatus('❌ Error: ' + error.message);
+                console.error('Error creating test data:', error);
+            }
+        }
+
+        // Start creating test data
+        createTestData();
+    </script>
+</body>
+</html> 
