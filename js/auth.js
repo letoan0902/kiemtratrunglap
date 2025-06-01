@@ -315,24 +315,25 @@ class AuthSystem {
       // Normalize input
       const normalizedInput = emailOrUsername.trim().toLowerCase();
 
-      // Reduced security delay for better UX
-      await this.delay(150); // Reduced from 300ms
-
+      // Fast lookup strategy - try username first, then scan if needed
       let userDoc = null;
-      let finalEmail = null;
+      let finalUserId = null;
       let foundUserData = null;
 
-      // First try direct lookup (for email-based IDs)
+      // First try direct username lookup (fastest)
       userDoc = await getDoc(doc(this.db, "users", normalizedInput));
 
       if (userDoc.exists()) {
         foundUserData = userDoc.data();
-        finalEmail = normalizedInput;
-        console.log("Found user by direct email lookup:", normalizedInput);
+        finalUserId = normalizedInput;
+        console.log("Found user by direct username lookup:", normalizedInput);
       } else {
-        console.log("Direct lookup failed, searching by email/username...");
+        console.log(
+          "Direct username lookup failed, checking if input is email..."
+        );
 
-        // Search all users to find by email or username
+        // If direct lookup failed, it might be an email - scan for email field
+        // This is slower but only runs when someone logs in with email instead of username
         const allUsersSnapshot = await getDocs(collection(this.db, "users"));
         let foundUser = null;
 
@@ -344,7 +345,7 @@ class AuthSystem {
           // Check if input matches email or username
           if (userEmail === normalizedInput || userName === normalizedInput) {
             foundUser = { id: doc.id, ...data };
-            finalEmail = doc.id; // Document ID is the normalized email
+            finalUserId = doc.id; // Document ID is the username
             foundUserData = data;
           }
         });
@@ -363,10 +364,7 @@ class AuthSystem {
           };
         }
 
-        console.log(
-          "Found user by email/username search:",
-          foundUserData.email
-        );
+        console.log("Found user by email search:", foundUserData.username);
       }
 
       if (!foundUserData.isActive) {
@@ -419,7 +417,7 @@ class AuthSystem {
       sessionStorage.setItem("currentUser", JSON.stringify(user));
 
       // Update last login time in Firestore
-      await updateDoc(doc(this.db, "users", finalEmail), {
+      await updateDoc(doc(this.db, "users", finalUserId), {
         lastLoginAt: serverTimestamp(),
       });
 
@@ -581,7 +579,7 @@ class AuthSystem {
     try {
       await this.waitForInitialization();
 
-      // Rate limiting for admin operations
+      // Fast rate limiting check
       const clientId = this.getClientIdentifier();
       if (!rateLimiter.isAllowed(`admin_${clientId}`)) {
         return {
@@ -590,40 +588,39 @@ class AuthSystem {
         };
       }
 
-      // Normalize email - trim and lowercase
-      const normalizedEmail = userData.email.trim().toLowerCase();
-      // Generate username from email if not provided
-      const username =
-        userData.username?.trim().toLowerCase() ||
-        normalizedEmail.split("@")[0];
+      // Fast input processing
+      const email = userData.email?.trim().toLowerCase() || null;
+      const username = userData.username?.trim().toLowerCase();
+      const password = userData.password?.trim() || "123456";
+      const name = userData.name?.trim();
 
-      console.log("Creating user with normalized email:", normalizedEmail);
-
-      // Check if user already exists by email
-      const existingUser = await getDoc(doc(this.db, "users", normalizedEmail));
-      if (existingUser.exists()) {
-        return { success: false, message: "Email đã tồn tại!" };
+      // Fast validation
+      if (!username) {
+        return { success: false, message: "Vui lòng nhập tên đăng nhập!" };
       }
 
-      // Check if username already exists
-      const allUsersSnapshot = await getDocs(collection(this.db, "users"));
-      let usernameExists = false;
-      allUsersSnapshot.forEach((doc) => {
-        const data = doc.data();
-        if (data.username === username) {
-          usernameExists = true;
-        }
-      });
+      if (username.length < 3) {
+        return {
+          success: false,
+          message: "Tên đăng nhập phải có ít nhất 3 ký tự!",
+        };
+      }
 
-      if (usernameExists) {
+      // Use username as document ID for fast lookup
+      const userId = username;
+
+      // Single fast check - try to get user by username (document ID)
+      const existingUser = await getDoc(doc(this.db, "users", userId));
+      if (existingUser.exists()) {
         return { success: false, message: "Tên người dùng đã tồn tại!" };
       }
 
+      // Fast user object creation
       const newUser = {
-        email: normalizedEmail, // Use normalized email
-        username: username, // Add username field
-        password: userData.password,
-        name: userData.name,
+        email: email,
+        username: username,
+        password: password,
+        name: name,
         role: "user",
         assignedFields: userData.assignedFields || [],
         createdAt: serverTimestamp(),
@@ -631,15 +628,15 @@ class AuthSystem {
         isActive: true,
       };
 
-      // Use normalized email as document ID
-      await setDoc(doc(this.db, "users", normalizedEmail), newUser);
+      // Single fast write operation
+      await setDoc(doc(this.db, "users", userId), newUser);
 
-      console.log("User created successfully:", normalizedEmail);
+      console.log("User created successfully:", userId);
 
       return {
         success: true,
         user: {
-          id: normalizedEmail,
+          id: userId,
           ...newUser,
           createdAt: new Date().toISOString(),
         },

@@ -1322,19 +1322,19 @@
                         <form id="createUserForm" autocomplete="off">
                             <div class="form-group">
                                 <label for="userUsername">Tên đăng nhập</label>
-                                <input type="text" id="userUsername" class="form-input" placeholder="Nhập tên đăng nhập" required autocomplete="off">
+                                <input type="text" id="userUsername" name="new-username" class="form-input" placeholder="Nhập tên đăng nhập" required autocomplete="new-password" data-lpignore="true" data-form-type="other">
                                 <div class="field-error" id="usernameError"></div>
                             </div>
                             
                             <div class="form-group">
                                 <label for="userEmail">Email (tùy chọn)</label>
-                                <input type="text" id="userEmail" class="form-input" placeholder="Nhập email hoặc để trống" autocomplete="off">
+                                <input type="text" id="userEmail" name="new-email" class="form-input" placeholder="Nhập email hoặc để trống" autocomplete="new-password" data-lpignore="true" data-form-type="other">
                                 <div class="field-error" id="emailError"></div>
                             </div>
                             
                             <div class="form-group">
                                 <label for="userPassword">Mật khẩu (để trống sẽ dùng 123456)</label>
-                                <input type="password" id="userPassword" class="form-input" placeholder="Nhập mật khẩu hoặc để trống" autocomplete="off">
+                                <input type="password" id="userPassword" name="new-password" class="form-input" placeholder="Nhập mật khẩu hoặc để trống" autocomplete="new-password" data-lpignore="true" data-form-type="other">
                                 <div class="field-error" id="passwordError"></div>
                             </div>
                             
@@ -1352,6 +1352,7 @@
                     e.stopPropagation();
                 });
 
+                // Add form submission handler
                 document.getElementById('createUserForm').addEventListener('submit', async (e) => {
                     e.preventDefault();
                     await this.handleAddUser(modal);
@@ -1385,19 +1386,58 @@
 
                 if (hasErrors) return;
 
+                // Add loading state to button
+                const createBtn = document.getElementById('createUserBtn');
+                const originalText = createBtn.innerHTML;
+                createBtn.innerHTML = '⏳ Đang tạo...';
+                createBtn.disabled = true;
+
                 // Name = username for display
                 const name = username;
 
                 try {
+                    // Fast user creation
                     const result = await authSystem.createUser({ name, email, username, password });
                     
                     if (result.success) {
+                        // Immediate success feedback
+                        createBtn.innerHTML = '✅ Thành công!';
                         Utils.showSuccess('Thêm người dùng thành công!');
+                        
+                        // Close modal immediately for better UX
                         modal.style.display = 'none';
                         document.body.removeChild(modal);
-                        await this.loadUsers();
-                        await this.loadStatistics();
+                        
+                        // Optimistic UI update - add user to table immediately
+                        this.addUserToTableOptimistic({
+                            id: result.user.id,
+                            name: result.user.name,
+                            email: result.user.email,
+                            assignedFields: result.user.assignedFields || [],
+                            createdAt: new Date().toISOString(),
+                            createdBy: authSystem.getCurrentUser().email
+                        });
+                        
+                        // Update statistics immediately (optimistic)
+                        this.updateStatisticsOptimistic('user', 1);
+                        
+                        // Background refresh (non-blocking)
+                        setTimeout(async () => {
+                            try {
+                                await Promise.all([
+                                    this.loadUsers(),
+                                    this.loadStatistics()
+                                ]);
+                            } catch (error) {
+                                console.error('Background refresh error:', error);
+                            }
+                        }, 100);
+                        
                     } else {
+                        // Reset button on error
+                        createBtn.innerHTML = originalText;
+                        createBtn.disabled = false;
+                        
                         // Check for specific field errors
                         if (result.message.includes('Tên người dùng đã tồn tại') || result.message.includes('username')) {
                             this.showFieldError('usernameError', result.message);
@@ -1409,6 +1449,10 @@
                         }
                     }
                 } catch (error) {
+                    // Reset button on error
+                    createBtn.innerHTML = originalText;
+                    createBtn.disabled = false;
+                    
                     console.error('Create user error:', error);
                     this.showSystemErrorModal('Có lỗi hệ thống xảy ra khi tạo người dùng!');
                 }
@@ -1478,6 +1522,7 @@
                     e.stopPropagation();
                 });
 
+                // Add form submission handler
                 document.getElementById('addFieldForm').addEventListener('submit', async (e) => {
                     e.preventDefault();
                     await this.handleAddField(modal);
@@ -1494,21 +1539,67 @@
                     return;
                 }
 
-                const result = await authSystem.createField({ name, description });
-                
-                if (result.success) {
-                    // If assign to all is checked, assign this field to all users
-                    if (assignToAll) {
-                        await this.assignFieldToAllUsers(result.field.id);
-                    }
+                // Add loading state to submit button
+                const submitBtn = modal.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '⏳ Đang tạo...';
+                submitBtn.disabled = true;
+
+                try {
+                    // Fast field creation
+                    const result = await authSystem.createField({ name, description });
                     
-                    Utils.showSuccess('Thêm trường thành công!');
-                    modal.style.display = 'none';
-                    document.body.removeChild(modal);
-                    await this.loadFields();
-                    await this.loadStatistics();
-                } else {
-                    Utils.showError(result.message);
+                    if (result.success) {
+                        // Immediate success feedback
+                        submitBtn.innerHTML = '✅ Thành công!';
+                        Utils.showSuccess('Thêm trường thành công!');
+                        
+                        // Close modal immediately
+                        modal.style.display = 'none';
+                        document.body.removeChild(modal);
+                        
+                        // Optimistic UI update
+                        this.addFieldToTableOptimistic({
+                            id: result.field.id,
+                            name: result.field.name,
+                            description: result.field.description,
+                            data: [],
+                            createdAt: new Date().toISOString(),
+                            createdBy: authSystem.getCurrentUser().email
+                        });
+                        
+                        // Update statistics immediately
+                        this.updateStatisticsOptimistic('field', 1);
+                        
+                        // Background assignment and refresh
+                        setTimeout(async () => {
+                            try {
+                                // If assign to all is checked, assign this field to all users
+                                if (assignToAll) {
+                                    await this.assignFieldToAllUsers(result.field.id);
+                                }
+                                
+                                // Background refresh
+                                await Promise.all([
+                                    this.loadFields(),
+                                    this.loadStatistics()
+                                ]);
+                            } catch (error) {
+                                console.error('Background field operations error:', error);
+                            }
+                        }, 100);
+                        
+                    } else {
+                        // Reset button on error
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                        Utils.showError(result.message);
+                    }
+                } catch (error) {
+                    // Reset button on error
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                    Utils.showError('Có lỗi xảy ra khi tạo trường!');
                 }
             }
 
@@ -1574,14 +1665,14 @@
                     e.stopPropagation();
                 });
 
-                // Setup form submission
+                // Add form submission handler
                 document.getElementById('editUserForm').addEventListener('submit', async (e) => {
                     e.preventDefault();
                     await this.handleEditUser(userId, modal);
                 });
             }
 
-            async handleEditUser(modal, userId) {
+            async handleEditUser(userId, modal) {
                 const username = document.getElementById('editUserUsername').value.trim();
                 const email = document.getElementById('editUserEmail').value.trim() || null;
                 const password = document.getElementById('editUserPassword').value.trim();
@@ -1678,14 +1769,14 @@
                     e.stopPropagation();
                 });
 
-                // Setup form submission
+                // Add form submission handler
                 document.getElementById('editFieldForm').addEventListener('submit', async (e) => {
                     e.preventDefault();
                     await this.handleEditField(fieldId, modal);
                 });
             }
 
-            async handleEditField(modal, fieldId) {
+            async handleEditField(fieldId, modal) {
                 const name = document.getElementById('editFieldName').value.trim();
                 const description = document.getElementById('editFieldDescription').value.trim();
 
@@ -2062,6 +2153,100 @@
                 const user = authSystem.getCurrentUser();
                 if (user) {
                     document.getElementById('userInfo').textContent = `👋 ${user.name}`;
+                }
+            }
+
+            updateStatisticsOptimistic(type, change) {
+                try {
+                    if (type === 'user') {
+                        const userElement = document.getElementById('totalUsers');
+                        const currentValue = parseInt(userElement.textContent) || 0;
+                        const newValue = Math.max(0, currentValue + change);
+                        Utils.animateNumber(userElement, currentValue, newValue);
+                    } else if (type === 'field') {
+                        const fieldElement = document.getElementById('totalFields');
+                        const currentValue = parseInt(fieldElement.textContent) || 0;
+                        const newValue = Math.max(0, currentValue + change);
+                        Utils.animateNumber(fieldElement, currentValue, newValue);
+                    } else if (type === 'data') {
+                        const dataElement = document.getElementById('totalData');
+                        const currentValue = parseInt(dataElement.textContent) || 0;
+                        const newValue = Math.max(0, currentValue + change);
+                        Utils.animateNumber(dataElement, currentValue, newValue);
+                    }
+                } catch (error) {
+                    console.debug('Optimistic stats update error:', error);
+                }
+            }
+
+            addUserToTableOptimistic(user) {
+                try {
+                    const container = document.getElementById('usersTableContainer');
+                    const table = container.querySelector('table tbody');
+                    
+                    if (!table) return; // Table not loaded yet
+                    
+                    // Create new row
+                    const row = document.createElement('tr');
+                    row.style.background = 'rgba(76, 175, 80, 0.1)'; // Green highlight for new item
+                    row.innerHTML = `
+                        <td>${user.name}</td>
+                        <td>${user.email || ''}</td>
+                        <td>${(user.assignedFields || []).length} trường</td>
+                        <td>${Utils.formatDate(user.createdAt, 'dateShort')}</td>
+                        <td>${user.createdBy}</td>
+                        <td>
+                            <button class="btn btn-secondary" onclick="adminPanel.editUser('${user.id}')" style="margin-right: 5px; padding: 5px 10px;">✏️</button>
+                            <button class="btn btn-danger" onclick="adminPanel.deleteUser('${user.id}')" style="padding: 5px 10px;">🗑️</button>
+                        </td>
+                    `;
+                    
+                    // Insert at the top (newest first)
+                    table.insertBefore(row, table.firstChild);
+                    
+                    // Remove highlight after animation
+                    setTimeout(() => {
+                        row.style.background = '';
+                    }, 2000);
+                } catch (error) {
+                    console.debug('Optimistic table update error:', error);
+                }
+            }
+
+            addFieldToTableOptimistic(field) {
+                try {
+                    const container = document.getElementById('fieldsTableContainer');
+                    const table = container.querySelector('table tbody');
+                    
+                    if (!table) return; // Table not loaded yet
+                    
+                    // Create new row
+                    const row = document.createElement('tr');
+                    row.style.background = 'rgba(76, 175, 80, 0.1)'; // Green highlight for new item
+                    row.innerHTML = `
+                        <td>${field.name}</td>
+                        <td>${field.description || ''}</td>
+                        <td>0 mục</td>
+                        <td>
+                            <button class="btn btn-secondary" onclick="adminPanel.showFieldAssignmentModal('${field.id}')" style="padding: 5px 10px;">0 người</button>
+                        </td>
+                        <td>${Utils.formatDate(field.createdAt, 'dateShort')}</td>
+                        <td>${field.createdBy}</td>
+                        <td>
+                            <button class="btn btn-secondary" onclick="adminPanel.editField('${field.id}')" style="margin-right: 5px; padding: 5px 10px;">✏️</button>
+                            <button class="btn btn-danger" onclick="adminPanel.deleteField('${field.id}')" style="padding: 5px 10px;">🗑️</button>
+                        </td>
+                    `;
+                    
+                    // Insert at the top (newest first)
+                    table.insertBefore(row, table.firstChild);
+                    
+                    // Remove highlight after animation
+                    setTimeout(() => {
+                        row.style.background = '';
+                    }, 2000);
+                } catch (error) {
+                    console.debug('Optimistic field table update error:', error);
                 }
             }
         }
