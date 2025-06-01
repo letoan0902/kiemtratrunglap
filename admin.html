@@ -345,13 +345,59 @@
             }
         }
 
+        // Hàm hover toggle password với hiệu ứng mượt mà cho admin
+        function hoverTogglePassword(inputId, button, isHovering) {
+            const input = document.getElementById(inputId);
+            const hideIcon = button.querySelector('.hide-icon');
+            const showIcon = button.querySelector('.show-icon');
+            
+            if (isHovering) {
+                // Khi hover vào - chuyển đổi trạng thái hiển thị
+                if (input.type === 'password') {
+                    // Hiện mật khẩu và chuyển sang icon mắt mở
+                    input.type = 'text';
+                    hideIcon.style.opacity = '0';
+                    showIcon.style.opacity = '1';
+                    hideIcon.style.display = 'none';
+                    showIcon.style.display = 'block';
+                } else {
+                    // Ẩn mật khẩu và chuyển sang icon mắt gạch
+                    input.type = 'password';
+                    showIcon.style.opacity = '0';
+                    hideIcon.style.opacity = '1';
+                    showIcon.style.display = 'none';
+                    hideIcon.style.display = 'block';
+                }
+            } else {
+                // Khi rời hover - trở về trạng thái ban đầu
+                if (input.type === 'text') {
+                    // Ẩn mật khẩu và chuyển sang icon mắt gạch
+                    input.type = 'password';
+                    showIcon.style.opacity = '0';
+                    hideIcon.style.opacity = '1';
+                    showIcon.style.display = 'none';
+                    hideIcon.style.display = 'block';
+                } else {
+                    // Giữ nguyên trạng thái ẩn
+                    hideIcon.style.opacity = '1';
+                    showIcon.style.opacity = '0';
+                    hideIcon.style.display = 'block';
+                    showIcon.style.display = 'none';
+                }
+            }
+        }
+
         // Auto-save functionality for admin forms
         let adminAutoSaveInterval = null;
+        let lastAdminSaveData = '';
         
         function startAdminAutoSave() {
+            // Don't start if already running
+            if (adminAutoSaveInterval) return;
+            
             adminAutoSaveInterval = setInterval(() => {
                 saveAdminFormDataToLocal();
-            }, 10000); // 10 seconds
+            }, 60000); // 60 seconds instead of 10 - less frequent for admin
         }
         
         function stopAdminAutoSave() {
@@ -363,27 +409,40 @@
         
         function saveAdminFormDataToLocal() {
             try {
+                // Only save if there's an active modal with form data
+                const activeModal = document.querySelector('.modal[style*="flex"]');
+                if (!activeModal) {
+                    return; // No modal open, nothing to save
+                }
+                
+                const form = activeModal.querySelector('form');
+                if (!form) {
+                    return; // No form in modal
+                }
+                
                 const formData = {
                     timestamp: new Date().toISOString(),
                     page: 'admin',
                     currentTab: window.adminPanel?.currentTab || 'users'
                 };
                 
-                // Save any open modal form data
-                const activeModal = document.querySelector('.modal[style*="flex"]');
-                if (activeModal) {
-                    const form = activeModal.querySelector('form');
-                    if (form) {
-                        const inputs = form.querySelectorAll('input[type="text"], input[type="email"], textarea');
-                        inputs.forEach(input => {
-                            if (input.id && input.value) {
-                                formData[input.id] = input.value;
-                            }
-                        });
+                let hasData = false;
+                const inputs = form.querySelectorAll('input[type="text"], input[type="email"], textarea');
+                inputs.forEach(input => {
+                    if (input.id && input.value.trim()) {
+                        formData[input.id] = input.value.trim();
+                        hasData = true;
                     }
+                });
+                
+                // Only save if there's actual data and it's different from last save
+                const currentDataString = JSON.stringify(formData);
+                if (!hasData || currentDataString === lastAdminSaveData) {
+                    return;
                 }
                 
-                localStorage.setItem('admin_form_backup', JSON.stringify(formData));
+                localStorage.setItem('admin_form_backup', currentDataString);
+                lastAdminSaveData = currentDataString;
                 console.log('Auto-saved admin form data');
             } catch (error) {
                 console.warn('Failed to save admin form data:', error);
@@ -404,9 +463,24 @@
                     localStorage.removeItem(key);
                 });
                 
-                console.log('Cleared admin local data:', keysToRemove);
+                console.log('Cleared admin local data');
             } catch (error) {
                 console.warn('Failed to clear admin local data:', error);
+            }
+        }
+
+        function logout() {
+            // Stop auto-save immediately
+            stopAdminAutoSave();
+            
+            if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+                // Clear all local data before logout
+                clearAllAdminLocalData();
+                
+                authSystem.logout();
+            } else {
+                // Restart auto-save if user cancels logout
+                startAdminAutoSave();
             }
         }
     </script>
@@ -498,11 +572,7 @@
 
                 // Logout
                 document.getElementById('logoutBtn').addEventListener('click', () => {
-                    // Stop auto-save and clear local data before logout
-                    stopAdminAutoSave();
-                    clearAllAdminLocalData();
-                    
-                    authSystem.logout();
+                    logout();
                 });
 
                 // Enhanced search setup
@@ -1443,7 +1513,7 @@
                                 <label for="userPassword">Mật khẩu (để trống sẽ dùng 123456)</label>
                                 <div class="password-input-container">
                                     <input type="password" id="userPassword" name="new-password" class="form-input" placeholder="Nhập mật khẩu hoặc để trống" autocomplete="new-password" data-lpignore="true" data-form-type="other">
-                                    <button type="button" class="password-toggle" onclick="togglePassword('userPassword', this)">
+                                    <button type="button" class="password-toggle" onclick="togglePassword('userPassword', this)" onmouseenter="hoverTogglePassword('userPassword', this, true)" onmouseleave="hoverTogglePassword('userPassword', this, false)">
                                         <svg class="password-icon hide-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M4 4L9.87868 9.87868M20 20L14.1213 14.1213M9.87868 9.87868C9.33579 10.4216 9 11.1716 9 12C9 13.6569 10.3431 15 12 15C12.8284 15 13.5784 14.6642 14.1213 14.1213M9.87868 9.87868L14.1213 14.1213M6.76821 6.76821C4.72843 8.09899 2.96378 10.026 2 11.9998C3.74646 15.5764 8.12201 19 11.9998 19C13.7376 19 15.5753 18.3124 17.2317 17.2317M9.76138 5.34717C10.5114 5.12316 11.2649 5 12.0005 5C15.8782 5 20.2531 8.42398 22 12.0002C21.448 13.1302 20.6336 14.2449 19.6554 15.2412" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                         </svg>
@@ -1761,7 +1831,7 @@
                                 <label for="editUserPassword">Mật khẩu mới (để trống nếu không đổi)</label>
                                 <div class="password-input-container">
                                     <input type="password" id="editUserPassword" class="form-input" placeholder="Nhập mật khẩu mới" autocomplete="off">
-                                    <button type="button" class="password-toggle" onclick="togglePassword('editUserPassword', this)">
+                                    <button type="button" class="password-toggle" onclick="togglePassword('editUserPassword', this)" onmouseenter="hoverTogglePassword('editUserPassword', this, true)" onmouseleave="hoverTogglePassword('editUserPassword', this, false)">
                                         <svg class="password-icon hide-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M4 4L9.87868 9.87868M20 20L14.1213 14.1213M9.87868 9.87868C9.33579 10.4216 9 11.1716 9 12C9 13.6569 10.3431 15 12 15C12.8284 15 13.5784 14.6642 14.1213 14.1213M9.87868 9.87868L14.1213 14.1213M6.76821 6.76821C4.72843 8.09899 2.96378 10.026 2 11.9998C3.74646 15.5764 8.12201 19 11.9998 19C13.7376 19 15.5753 18.3124 17.2317 17.2317M9.76138 5.34717C10.5114 5.12316 11.2649 5 12.0005 5C15.8782 5 20.2531 8.42398 22 12.0002C21.448 13.1302 20.6336 14.2449 19.6554 15.2412" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                         </svg>
@@ -2417,6 +2487,34 @@
             
             adminPanel = new AdminPanel();
             window.adminPanel = adminPanel;
+            
+            // Initialize admin panel
+            await adminPanel.initialize();
+            
+            // Start auto-save - but only when there are modals with forms
+            document.addEventListener('click', (e) => {
+                // Start auto-save when a modal with form is opened
+                if (e.target.matches('[onclick*="Modal"], .btn[data-action]')) {
+                    setTimeout(() => {
+                        const activeModal = document.querySelector('.modal[style*="flex"]');
+                        if (activeModal && activeModal.querySelector('form')) {
+                            startAdminAutoSave();
+                        }
+                    }, 100);
+                }
+            });
+            
+            // Stop auto-save when modals are closed
+            document.addEventListener('click', (e) => {
+                if (e.target.matches('.modal-close') || e.target.closest('.modal') === e.target) {
+                    setTimeout(() => {
+                        const activeModal = document.querySelector('.modal[style*="flex"]');
+                        if (!activeModal) {
+                            stopAdminAutoSave();
+                        }
+                    }, 100);
+                }
+            });
         });
     </script>
 
@@ -2528,7 +2626,7 @@
             border: 1px solid rgba(244, 67, 54, 0.3);
         }
 
-        /* Password Toggle Styling */
+        /* Styling toggle mật khẩu cho admin */
         .password-input-container {
             position: relative;
             display: flex;
@@ -2537,6 +2635,7 @@
 
         .password-input-container .form-input {
             padding-right: 45px;
+            transition: all 0.3s ease;
         }
 
         .password-toggle {
@@ -2546,20 +2645,65 @@
             border: none;
             cursor: pointer;
             padding: 5px;
-            color: #666;
-            transition: color 0.3s ease;
+            color: #ff6b35; /* Màu cam mặc định */
+            transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
+            border-radius: 4px;
         }
 
         .password-toggle:hover {
-            color: #ff6b35;
+            color: #e55a2b; /* Màu cam đậm hơn khi hover */
+            background-color: rgba(255, 107, 53, 0.1);
+            transform: scale(1.05);
+        }
+
+        .password-toggle:active {
+            transform: scale(0.95);
         }
 
         .password-icon {
             width: 20px;
             height: 20px;
+            transition: all 0.4s ease;
+            opacity: 1;
+        }
+
+        /* Hiệu ứng chuyển đổi mượt mà cho icons trong admin */
+        .password-toggle:hover .password-icon {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Hiệu ứng glow nhẹ cho input khi hover vào toggle trong admin */
+        .password-toggle:hover + .form-input,
+        .password-input-container:hover .form-input {
+            box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.2);
+            border-color: #ff6b35;
+        }
+
+        /* Hiệu ứng animation cho việc chuyển đổi password trong admin */
+        .form-input[type="password"] {
+            letter-spacing: 2px;
+            font-family: monospace;
+        }
+
+        .form-input[type="text"] {
+            letter-spacing: normal;
+            font-family: inherit;
+        }
+
+        /* Responsive cho mobile trong admin */
+        @media (max-width: 768px) {
+            .password-toggle {
+                padding: 8px;
+                right: 10px;
+            }
+            
+            .password-icon {
+                width: 18px;
+                height: 18px;
+            }
         }
     </style>
 </body>

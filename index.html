@@ -25,7 +25,7 @@
                     <label for="password">Mật khẩu</label>
                     <div class="password-input-container">
                         <input type="password" id="password" class="form-input" placeholder="Nhập mật khẩu">
-                        <button type="button" class="password-toggle" onclick="togglePassword('password', this)">
+                        <button type="button" class="password-toggle" onclick="togglePassword('password', this)" onmouseenter="hoverTogglePassword('password', this, true)" onmouseleave="hoverTogglePassword('password', this, false)">
                             <svg class="password-icon hide-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M4 4L9.87868 9.87868M20 20L14.1213 14.1213M9.87868 9.87868C9.33579 10.4216 9 11.1716 9 12C9 13.6569 10.3431 15 12 15C12.8284 15 13.5784 14.6642 14.1213 14.1213M9.87868 9.87868L14.1213 14.1213M6.76821 6.76821C4.72843 8.09899 2.96378 10.026 2 11.9998C3.74646 15.5764 8.12201 19 11.9998 19C13.7376 19 15.5753 18.3124 17.2317 17.2317M9.76138 5.34717C10.5114 5.12316 11.2649 5 12.0005 5C15.8782 5 20.2531 8.42398 22 12.0002C21.448 13.1302 20.6336 14.2449 19.6554 15.2412" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
@@ -74,14 +74,66 @@
             }
         }
 
+        // Hàm hover toggle password với hiệu ứng mượt mà
+        function hoverTogglePassword(inputId, button, isHovering) {
+            const input = document.getElementById(inputId);
+            const hideIcon = button.querySelector('.hide-icon');
+            const showIcon = button.querySelector('.show-icon');
+            
+            if (isHovering) {
+                // Khi hover vào - chuyển đổi trạng thái hiển thị
+                if (input.type === 'password') {
+                    // Hiện mật khẩu và chuyển sang icon mắt mở
+                    input.type = 'text';
+                    hideIcon.style.opacity = '0';
+                    showIcon.style.opacity = '1';
+                    hideIcon.style.display = 'none';
+                    showIcon.style.display = 'block';
+                } else {
+                    // Ẩn mật khẩu và chuyển sang icon mắt gạch
+                    input.type = 'password';
+                    showIcon.style.opacity = '0';
+                    hideIcon.style.opacity = '1';
+                    showIcon.style.display = 'none';
+                    hideIcon.style.display = 'block';
+                }
+            } else {
+                // Khi rời hover - trở về trạng thái ban đầu
+                if (input.type === 'text') {
+                    // Ẩn mật khẩu và chuyển sang icon mắt gạch
+                    input.type = 'password';
+                    showIcon.style.opacity = '0';
+                    hideIcon.style.opacity = '1';
+                    showIcon.style.display = 'none';
+                    hideIcon.style.display = 'block';
+                } else {
+                    // Giữ nguyên trạng thái ẩn
+                    hideIcon.style.opacity = '1';
+                    showIcon.style.opacity = '0';
+                    hideIcon.style.display = 'block';
+                    showIcon.style.display = 'none';
+                }
+            }
+        }
+
         // Auto-save functionality
         let autoSaveInterval = null;
+        let lastSavedData = '';
+        let isLoggedIn = false;
         
         function startAutoSave() {
-            // Save form data every 10 seconds
+            // Don't start if already logged in
+            if (isLoggedIn) return;
+            
+            // Don't start if already running
+            if (autoSaveInterval) return;
+            
+            // Save form data every 30 seconds (reduced frequency)
             autoSaveInterval = setInterval(() => {
-                saveFormDataToLocal();
-            }, 10000); // 10 seconds
+                if (!isLoggedIn) {
+                    saveFormDataToLocal();
+                }
+            }, 30000); // 30 seconds instead of 10
         }
         
         function stopAutoSave() {
@@ -93,14 +145,28 @@
         
         function saveFormDataToLocal() {
             try {
+                // Only save if user is not logged in
+                if (isLoggedIn) {
+                    stopAutoSave();
+                    return;
+                }
+                
+                const emailValue = document.getElementById('email')?.value || '';
+                
+                // Only save if there's actually content and it's different from last save
+                if (!emailValue || emailValue === lastSavedData) {
+                    return;
+                }
+                
                 const formData = {
-                    email: document.getElementById('email')?.value || '',
+                    email: emailValue,
                     timestamp: new Date().toISOString(),
                     page: 'login'
                 };
                 
                 localStorage.setItem('app_form_backup', JSON.stringify(formData));
-                console.log('Auto-saved form data:', formData);
+                lastSavedData = emailValue;
+                console.log('Auto-saved form data');
             } catch (error) {
                 console.warn('Failed to save form data:', error);
             }
@@ -115,6 +181,7 @@
                         const emailInput = document.getElementById('email');
                         if (emailInput && !emailInput.value) {
                             emailInput.value = formData.email;
+                            lastSavedData = formData.email;
                         }
                     }
                 }
@@ -138,7 +205,7 @@
                     localStorage.removeItem(key);
                 });
                 
-                console.log('Cleared local data:', keysToRemove);
+                console.log('Cleared local data');
             } catch (error) {
                 console.warn('Failed to clear local data:', error);
             }
@@ -146,10 +213,10 @@
     </script>
     
     <script type="module">
-        // Optimized module imports with timeout fallback
-        const MODULE_TIMEOUT = 10000; // 10 seconds
+        // Nhập module tối ưu với timeout dự phòng
+        const MODULE_TIMEOUT = 10000; // 10 giây
         
-        // Fast module loader with error handling
+        // Bộ tải module nhanh với xử lý lỗi
         async function loadModules() {
             try {
                 const loadPromise = Promise.all([
@@ -158,26 +225,26 @@
                 ]);
                 
                 const timeoutPromise = new Promise((_, reject) => {
-                    setTimeout(() => reject(new Error('Module load timeout')), MODULE_TIMEOUT);
+                    setTimeout(() => reject(new Error('Hết thời gian tải module')), MODULE_TIMEOUT);
                 });
                 
                 const [configModule, authModule] = await Promise.race([loadPromise, timeoutPromise]);
                 
-                // Make them globally available
+                // Làm cho chúng có thể truy cập toàn cục
                 window.configManager = configModule.configManager;
                 window.rateLimiter = configModule.rateLimiter;
                 window.authSystem = authModule.authSystem;
                 
                 return true;
             } catch (error) {
-                console.error('Failed to load modules:', error);
+                console.error('Không thể tải modules:', error);
                 hideLoadingModal();
                 showError('Lỗi tải ứng dụng. Vui lòng thử lại.');
                 return false;
             }
         }
 
-        // Optimized utility functions
+        // Các hàm tiện ích tối ưu
         function clearErrors() {
             document.getElementById('emailError').textContent = '';
             document.getElementById('passwordError').textContent = '';
@@ -201,7 +268,7 @@
         }
 
         function showError(message) {
-            alert(message); // Simple fallback error display
+            alert(message); // Hiển thị lỗi dự phòng đơn giản
         }
 
         function showLockedAccountModal(message) {
@@ -220,7 +287,7 @@
             document.body.appendChild(modal);
         }
 
-        // Fast authentication system checker
+        // Kiểm tra hệ thống xác thực nhanh
         async function waitForAuthSystem(maxAttempts = 100) {
             for (let i = 0; i < maxAttempts; i++) {
                 if (window.authSystem) return true;
@@ -229,17 +296,17 @@
             return false;
         }
 
-        // Optimized initialization
+        // Khởi tạo tối ưu
         async function initializeApp() {
             showLoadingModal('Đang tải ứng dụng...');
             
-            // Load modules
+            // Tải modules
             const modulesLoaded = await loadModules();
             if (!modulesLoaded) return;
             
             showLoadingModal('Đang khởi tạo bảo mật...');
             
-            // Wait for auth system
+            // Chờ hệ thống xác thực
             const authReady = await waitForAuthSystem();
             if (!authReady) {
                 hideLoadingModal();
@@ -249,13 +316,13 @@
 
             hideLoadingModal();
             
-            // Check if user is already logged in
+            // Kiểm tra xem người dùng đã đăng nhập chưa
             if (authSystem.isLoggedIn()) {
                 authSystem.redirectToAppropriatePanel();
                 return;
             }
 
-            // Setup form handlers
+            // Thiết lập xử lý form
             setupFormHandlers();
         }
 
@@ -264,17 +331,21 @@
             const emailInput = document.getElementById('email');
             const passwordInput = document.getElementById('password');
 
-            // Load saved form data
+            // Tải dữ liệu form đã lưu
             loadFormDataFromLocal();
             
-            // Start auto-save
-            startAutoSave();
+            // Chỉ bắt đầu tự động lưu nếu chưa đăng nhập
+            if (!authSystem.isLoggedIn()) {
+                startAutoSave();
+            } else {
+                isLoggedIn = true;
+            }
 
-            // Handle form submission
+            // Xử lý submit form
             loginForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
-                // Stop auto-save during submission
+                // Dừng tự động lưu ngay khi submit
                 stopAutoSave();
                 
                 clearErrors();
@@ -282,7 +353,7 @@
                 const email = emailInput.value.trim();
                 const password = passwordInput.value.trim();
 
-                // Client-side validation
+                // Kiểm tra phía client
                 let hasErrors = false;
 
                 if (!email) {
@@ -296,8 +367,10 @@
                 }
 
                 if (hasErrors) {
-                    // Restart auto-save if there are errors
-                    startAutoSave();
+                    // Chỉ khởi động lại tự động lưu nếu đăng nhập thất bại
+                    if (!isLoggedIn) {
+                        startAutoSave();
+                    }
                     return;
                 }
 
@@ -307,21 +380,27 @@
                     const result = await authSystem.login(email, password);
                     
                     if (result.success) {
+                        // Đánh dấu đã đăng nhập để ngăn tự động lưu
+                        isLoggedIn = true;
+                        stopAutoSave();
+                        
                         showLoadingModal('Đăng nhập thành công!');
                         
-                        // Clear auto-save data on successful login
+                        // Xóa dữ liệu tự động lưu khi đăng nhập thành công
                         localStorage.removeItem('app_form_backup');
                         
-                        // Fast redirect
+                        // Chuyển hướng nhanh
                         setTimeout(() => {
                             hideLoadingModal();
                             authSystem.redirectToAppropriatePanel();
-                        }, 300); // Reduced from 500ms
+                        }, 300);
                     } else {
                         hideLoadingModal();
                         
-                        // Restart auto-save on failed login
-                        startAutoSave();
+                        // Chỉ khởi động lại tự động lưu nếu vẫn chưa đăng nhập
+                        if (!isLoggedIn) {
+                            startAutoSave();
+                        }
                         
                         // Kiểm tra nếu user bị khóa
                         if (result.isLocked) {
@@ -329,7 +408,7 @@
                             return;
                         }
                         
-                        // Show specific field errors
+                        // Hiển thị lỗi cụ thể cho từng trường
                         if (result.field === 'email') {
                             showFieldError('email', result.message);
                         } else if (result.field === 'password') {
@@ -339,28 +418,41 @@
                         }
                     }
                 } catch (error) {
-                    console.error('Login error:', error);
+                    console.error('Lỗi đăng nhập:', error);
                     hideLoadingModal();
                     
-                    // Restart auto-save on error
-                    startAutoSave();
+                    // Chỉ khởi động lại tự động lưu nếu vẫn chưa đăng nhập
+                    if (!isLoggedIn) {
+                        startAutoSave();
+                    }
                     
                     showFieldError('email', 'Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại!');
                 }
             });
 
-            // Clear errors when user starts typing and trigger auto-save
+            // Xử lý input tối ưu - chỉ lưu khi có thay đổi có ý nghĩa
+            let emailSaveTimeout = null;
             emailInput.addEventListener('input', () => {
                 document.getElementById('emailError').textContent = '';
-                // Trigger immediate save when user types
-                saveFormDataToLocal();
+                
+                // Không lưu nếu đã đăng nhập
+                if (isLoggedIn) return;
+                
+                // Debounce việc lưu để tránh quá nhiều lần gọi
+                clearTimeout(emailSaveTimeout);
+                emailSaveTimeout = setTimeout(() => {
+                    const currentValue = emailInput.value.trim();
+                    if (currentValue && currentValue !== lastSavedData) {
+                        saveFormDataToLocal();
+                    }
+                }, 2000); // Đợi 2 giây sau khi người dùng ngừng gõ
             });
 
             passwordInput.addEventListener('input', () => {
                 document.getElementById('passwordError').textContent = '';
             });
 
-            // Add enter key handling
+            // Thêm xử lý phím Enter
             emailInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     passwordInput.focus();
@@ -373,23 +465,23 @@
                 }
             });
 
-            // Auto focus on email input
+            // Tự động focus vào input email
             emailInput.focus();
             
-            // Cleanup on page unload
+            // Dọn dẹp khi thoát trang
             window.addEventListener('beforeunload', () => {
                 stopAutoSave();
             });
         }
 
-        // Start the application
+        // Khởi động ứng dụng
         document.addEventListener('DOMContentLoaded', initializeApp);
         
-        // Fallback initialization if DOMContentLoaded already fired
+        // Khởi tạo dự phòng nếu DOMContentLoaded đã kích hoạt
         if (document.readyState === 'loading') {
-            // DOMContentLoaded will handle it
+            // DOMContentLoaded sẽ xử lý
         } else {
-            // DOM is already loaded
+            // DOM đã được tải
             setTimeout(initializeApp, 0);
         }
     </script>
@@ -537,7 +629,7 @@
             }
         }
 
-        /* Password Toggle Styling */
+        /* Styling toggle mật khẩu */
         .password-input-container {
             position: relative;
             display: flex;
@@ -546,6 +638,7 @@
 
         .password-input-container .form-input {
             padding-right: 45px;
+            transition: all 0.3s ease;
         }
 
         .password-toggle {
@@ -555,20 +648,65 @@
             border: none;
             cursor: pointer;
             padding: 5px;
-            color: #666;
-            transition: color 0.3s ease;
+            color: #ff6b35; /* Màu cam mặc định */
+            transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
+            border-radius: 4px;
         }
 
         .password-toggle:hover {
-            color: #ff6b35;
+            color: #e55a2b; /* Màu cam đậm hơn khi hover */
+            background-color: rgba(255, 107, 53, 0.1);
+            transform: scale(1.05);
+        }
+
+        .password-toggle:active {
+            transform: scale(0.95);
         }
 
         .password-icon {
             width: 20px;
             height: 20px;
+            transition: all 0.4s ease;
+            opacity: 1;
+        }
+
+        /* Hiệu ứng chuyển đổi mượt mà cho icons */
+        .password-toggle:hover .password-icon {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Hiệu ứng glow nhẹ cho input khi hover vào toggle */
+        .password-toggle:hover + .form-input,
+        .password-input-container:hover .form-input {
+            box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.2);
+            border-color: #ff6b35;
+        }
+
+        /* Hiệu ứng animation cho việc chuyển đổi password */
+        .form-input[type="password"] {
+            letter-spacing: 2px;
+            font-family: monospace;
+        }
+
+        .form-input[type="text"] {
+            letter-spacing: normal;
+            font-family: inherit;
+        }
+
+        /* Responsive cho mobile */
+        @media (max-width: 768px) {
+            .password-toggle {
+                padding: 8px;
+                right: 10px;
+            }
+            
+            .password-icon {
+                width: 18px;
+                height: 18px;
+            }
         }
     </style>
 </body>
