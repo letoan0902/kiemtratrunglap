@@ -83,14 +83,14 @@ class FirebaseConfigManager {
   // Background security checks (non-blocking)
   performBackgroundSecurityChecks() {
     try {
-      // Check for developer tools (background)
-      if (this.isDevToolsOpen()) {
-        console.warn("Developer tools detected");
-      }
+      // Check for developer tools (background) - DISABLED to prevent blocking
+      // if (this.isDevToolsOpen()) {
+      //   console.warn("Developer tools detected");
+      // }
 
       // Check referrer (background)
       if (!this.isValidReferrer()) {
-        console.warn("Invalid referrer detected");
+        console.debug("Invalid referrer detected"); // Changed to debug
       }
     } catch (error) {
       // Silent fail for background checks

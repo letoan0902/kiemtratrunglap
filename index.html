@@ -5,11 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đăng nhập - Hệ thống Kiểm tra Trùng lặp</title>
     <link rel="stylesheet" href="css/style.css">
-    
-    <!-- Preload critical resources -->
-    <link rel="preload" href="js/utils.js" as="script">
-    <link rel="preload" href="js/config.js" as="script">
-    <link rel="preload" href="js/auth.js" as="script">
 </head>
 <body>
     <div class="auth-container">
@@ -22,7 +17,7 @@
             <form id="loginForm">
                 <div class="form-group">
                     <label for="email">Email hoặc Tên đăng nhập</label>
-                    <input type="text" id="email" class="form-input" placeholder="Nhập email hoặc tên đăng nhập" required>
+                    <input type="text" id="email" class="form-input" placeholder="Nhập email hoặc tên đăng nhập" required autocomplete="off">
                     <small style="color: #666; font-size: 12px;">💡 Bạn có thể đăng nhập bằng email hoặc tên đăng nhập</small>
                     <div class="error-message" id="emailError"></div>
                 </div>

@@ -452,7 +452,9 @@ class AuthSystem {
   generateClientId() {
     const timestamp = Date.now().toString(36);
     const random = Math.random().toString(36).substr(2, 9);
-    const screenSize = `${window.screen.width}x${window.screen.height}`;
+    const screenSize = window.screen
+      ? `${window.screen.width}x${window.screen.height}`
+      : "unknown";
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
     return btoa(`${timestamp}_${random}_${screenSize}_${tz}`).substr(0, 16);
