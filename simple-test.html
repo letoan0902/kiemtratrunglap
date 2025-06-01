@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Test Data Creator</title>
+</head>
+<body>
+    <h1>Simple Test Data Creator</h1>
+    <div id="status">Ready to create test data...</div>
+    <button onclick="createData()" id="createBtn">Create Test Data</button>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
+        import {
+            getFirestore,
+            doc,
+            setDoc,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+
+        const statusDiv = document.getElementById('status');
+
+        function updateStatus(message) {
+            statusDiv.innerHTML += '<br>' + message;
+            console.log(message);
+        }
+
+        // Firebase config (base64 decoded)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCQn1pbhcHnY89x4_FeWsaKq4vD1qniq1w",
+            authDomain: "letoancheckduplicates.firebaseapp.com", 
+            projectId: "letoancheckduplicates",
+            storageBucket: "letoancheckduplicates.appspot.com",
+            messagingSenderId: "521439593562",
+            appId: "1:521439593562:web:4649d3e7de194d82157fae"
+        };
+
+        // Make createData globally available
+        window.createData = async function() {
+            try {
+                document.getElementById('createBtn').disabled = true;
+                updateStatus('🔧 Initializing Firebase...');
+                
+                // Initialize Firebase
+                const app = initializeApp(firebaseConfig);
+                const db = getFirestore(app);
+                
+                updateStatus('✅ Firebase initialized successfully');
+
+                // Create admin user
+                updateStatus('👤 Creating admin user...');
+                const adminData = {
+                    email: 'admin@test.com',
+                    username: 'admin',
+                    password: 'admin123',
+                    name: 'Administrator',
+                    role: 'admin',
+                    isActive: true,
+                    createdAt: new Date().toISOString(),
+                    createdBy: 'system'
+                };
+
+                await setDoc(doc(db, 'users', 'admin@test.com'), adminData);
+                updateStatus('✅ Admin user created: admin@test.com / admin123');
+
+                // Create test user
+                updateStatus('👥 Creating test user...');
+                const userData = {
+                    email: 'user@test.com',
+                    username: 'testuser',
+                    password: 'user123',
+                    name: 'Test User',
+                    role: 'user',
+                    isActive: true,
+                    assignedFields: [],
+                    createdAt: new Date().toISOString(),
+                    createdBy: 'admin@test.com'
+                };
+
+                await setDoc(doc(db, 'users', 'user@test.com'), userData);
+                updateStatus('✅ Test user created: user@test.com / user123');
+
+                // Create test fields
+                updateStatus('📊 Creating test fields...');
+                const fieldId1 = 'field_' + Date.now() + '_1';
+                const fieldId2 = 'field_' + Date.now() + '_2';
+                
+                const field1 = {
+                    name: 'Test Field 1',
+                    description: 'This is a test field for demonstration',
+                    data: [
+                        {
+                            id: 'data_1',
+                            value: 'Sample Data 1',
+                            addedAt: new Date().toISOString(),
+                            addedBy: 'admin@test.com'
+                        },
+                        {
+                            id: 'data_2', 
+                            value: 'Sample Data 2',
+                            addedAt: new Date().toISOString(),
+                            addedBy: 'admin@test.com'
+                        }
+                    ],
+                    isActive: true,
+                    createdAt: new Date().toISOString(),
+                    createdBy: 'admin@test.com'
+                };
+
+                const field2 = {
+                    name: 'Test Field 2',
+                    description: 'Another test field',
+                    data: [],
+                    isActive: true,
+                    createdAt: new Date().toISOString(),
+                    createdBy: 'admin@test.com'
+                };
+
+                await setDoc(doc(db, 'fields', fieldId1), field1);
+                updateStatus('✅ Created field: Test Field 1');
+
+                await setDoc(doc(db, 'fields', fieldId2), field2);
+                updateStatus('✅ Created field: Test Field 2');
+
+                // Update test user with assigned fields
+                updateStatus('🔗 Assigning fields to test user...');
+                await setDoc(doc(db, 'users', 'user@test.com'), {
+                    ...userData,
+                    assignedFields: [fieldId1, fieldId2]
+                });
+                updateStatus('✅ Fields assigned to test user');
+
+                updateStatus('🎉 ALL TEST DATA CREATED SUCCESSFULLY!');
+                updateStatus('📋 Login credentials:');
+                updateStatus('   Admin: admin@test.com / admin123');
+                updateStatus('   User: user@test.com / user123');
+                updateStatus('');
+                updateStatus('🚀 Now you can test login at:');
+                updateStatus('   https://letoan0902.github.io/kiemtratrunglap');
+                
+            } catch (error) {
+                updateStatus('❌ Error: ' + error.message);
+                console.error('Error creating test data:', error);
+            } finally {
+                document.getElementById('createBtn').disabled = false;
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #status {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            min-height: 200px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        button {
+            background: #ff6b35;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</body>
+</html> 
