@@ -24,11 +24,27 @@
                 <div class="form-group">
                     <label for="password">Mật khẩu</label>
                     <div class="password-input-container">
-                        <input type="password" id="password" class="form-input" placeholder="Nhập mật khẩu">
+                        <input type="password" id="password" class="form-input password-field" placeholder="Nhập mật khẩu">
                         <button type="button" class="password-toggle" onclick="togglePassword('password', this)" onmouseenter="hoverTogglePassword('password', this, true)" onmouseleave="hoverTogglePassword('password', this, false)">
+                            <!-- SVG mắt ẩn hoàn toàn (với gạch) -->
                             <svg class="password-icon hide-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M4 4L9.87868 9.87868M20 20L14.1213 14.1213M9.87868 9.87868C9.33579 10.4216 9 11.1716 9 12C9 13.6569 10.3431 15 12 15C12.8284 15 13.5784 14.6642 14.1213 14.1213M9.87868 9.87868L14.1213 14.1213M6.76821 6.76821C4.72843 8.09899 2.96378 10.026 2 11.9998C3.74646 15.5764 8.12201 19 11.9998 19C13.7376 19 15.5753 18.3124 17.2317 17.2317M9.76138 5.34717C10.5114 5.12316 11.2649 5 12.0005 5C15.8782 5 20.2531 8.42398 22 12.0002C21.448 13.1302 20.6336 14.2449 19.6554 15.2412" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
+                            
+                            <!-- SVG mắt cắt 1/3 (bắt đầu mở) -->
+                            <svg class="password-icon partial1-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+                                <path d="M4 4L9.87868 9.87868M20 20L14.1213 14.1213M9.87868 9.87868C9.33579 10.4216 9 11.1716 9 12C9 13.6569 10.3431 15 12 15C12.8284 15 13.5784 14.6642 14.1213 14.1213M9.87868 9.87868L14.1213 14.1213" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M6.76821 6.76821C4.72843 8.09899 2.96378 10.026 2 11.9998C3.74646 15.5764 8.12201 19 11.9998 19C13.7376 19 15.5753 18.3124 17.2317 17.2317" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+                            </svg>
+                            
+                            <!-- SVG mắt cắt 2/3 (gần như mở) -->
+                            <svg class="password-icon partial2-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+                                <path d="M4 4L9.87868 9.87868M20 20L14.1213 14.1213" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/>
+                                <path d="M12,4 C14.7275481,4 17.3356792,5.4306247 19.76629,7.78114976 C20.5955095,8.58304746 21.3456935,9.43915664 22.0060909,10.2956239 C22.4045936,10.8124408 22.687526,11.2189945 22.8424353,11.4612025 L23.1870348,12 L22.8424353,12.5387975 C22.687526,12.7810055 22.4045936,13.1875592 22.0060909,13.7043761" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M12,16 C9.790861,16 8,14.209139 8,12 C8,9.790861 9.790861,8 12,8 C14.209139,8 16,9.790861 16,12 C16,14.209139 14.209139,16 12,16 Z M12,14 C13.1045695,14 14,13.1045695 14,12 C14,10.8954305 13.1045695,10 12,10 C10.8954305,10 10,10.8954305 10,12 C10,13.1045695 10.8954305,14 12,14 Z" fill="currentColor" opacity="0.7"/>
+                            </svg>
+                            
+                            <!-- SVG mắt mở hoàn toàn -->
                             <svg class="password-icon show-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">
                                 <path fill-rule="evenodd" d="M12,4 C14.7275481,4 17.3356792,5.4306247 19.76629,7.78114976 C20.5955095,8.58304746 21.3456935,9.43915664 22.0060909,10.2956239 C22.4045936,10.8124408 22.687526,11.2189945 22.8424353,11.4612025 L23.1870348,12 L22.8424353,12.5387975 C22.687526,12.7810055 22.4045936,13.1875592 22.0060909,13.7043761 C21.3456935,14.5608434 20.5955095,15.4169525 19.76629,16.2188502 C17.3356792,18.5693753 14.7275481,20 12,20 C9.27245185,20 6.66432084,18.5693753 4.23371003,16.2188502 C3.40449054,15.4169525 2.65430652,14.5608434 1.99390911,13.7043761 C1.59540638,13.1875592 1.31247398,12.7810055 1.15756471,12.5387975 L0.812965202,12 L1.15756471,11.4612025 C1.31247398,11.2189945 1.59540638,10.8124408 1.99390911,10.2956239 C2.65430652,9.43915664 3.40449054,8.58304746 4.23371003,7.78114976 C6.66432084,5.4306247 9.27245185,4 12,4 Z M20.4222529,11.5168761 C19.8176112,10.7327184 19.1301624,9.94820254 18.37596,9.21885024 C16.2825083,7.1943753 14.1050769,6 12,6 C9.89492315,6 7.71749166,7.1943753 5.62403997,9.21885024 C4.86983759,9.94820254 4.18238879,10.7327184 3.57774714,11.5168761 C3.44715924,11.6862352 3.32648802,11.8478224 3.21616526,12 C3.32648802,12.1521776 3.44715924,12.3137648 3.57774714,12.4831239 C4.18238879,13.2672816 4.86983759,14.0517975 5.62403997,14.7811498 C7.71749166,16.8056247 9.89492315,18 12,18 C14.1050769,18 16.2825083,16.8056247 18.37596,14.7811498 C19.1301624,14.0517975 19.8176112,13.2672816 20.4222529,12.4831239 C20.5528408,12.3137648 20.673512,12.1521776 20.7838347,12 C20.673512,11.8478224 20.5528408,11.6862352 20.4222529,11.5168761 Z M12,16 C9.790861,16 8,14.209139 8,12 C8,9.790861 9.790861,8 12,8 C14.209139,8 16,9.790861 16,12 C16,14.209139 14.209139,16 12,16 Z M12,14 C13.1045695,14 14,13.1045695 14,12 C14,10.8954305 13.1045695,10 12,10 C10.8954305,10 10,10.8954305 10,12 C10,13.1045695 10.8954305,14 12,14 Z" fill="currentColor"/>
                             </svg>
@@ -57,62 +73,159 @@
     
     <!-- Global functions that need to be accessible from HTML -->
     <script>
-        // Global password toggle function - must be in global scope for onclick
+        // Trạng thái cho password toggle
+        let passwordToggleStates = {};
+
+        // Hàm toggle password global - phải trong phạm vi global cho onclick
         function togglePassword(inputId, button) {
             const input = document.getElementById(inputId);
-            const hideIcon = button.querySelector('.hide-icon');
-            const showIcon = button.querySelector('.show-icon');
             
+            // Initialize state if not exists
+            if (!passwordToggleStates[inputId]) {
+                passwordToggleStates[inputId] = {
+                    isRevealed: false,
+                    hoverPaused: false,
+                    currentIcon: 'hide'
+                };
+            }
+            
+            const state = passwordToggleStates[inputId];
+            
+            // Toggle password visibility
             if (input.type === 'password') {
                 input.type = 'text';
-                hideIcon.style.display = 'none';
-                showIcon.style.display = 'block';
+                state.isRevealed = true;
+                state.currentIcon = 'show';
             } else {
                 input.type = 'password';
-                hideIcon.style.display = 'block';
-                showIcon.style.display = 'none';
+                state.isRevealed = false;
+                state.currentIcon = 'hide';
+            }
+            
+            // Tạm dừng hover trong 2 giây
+            state.hoverPaused = true;
+            updateIconDisplay(button, state.currentIcon, true);
+            
+            setTimeout(() => {
+                state.hoverPaused = false;
+            }, 2000);
+        }
+
+        // Hàm hover toggle password với hiệu ứng mượt mà và animation
+        function hoverTogglePassword(inputId, button, isHovering) {
+            // Initialize state if not exists
+            if (!passwordToggleStates[inputId]) {
+                passwordToggleStates[inputId] = {
+                    isRevealed: false,
+                    hoverPaused: false,
+                    currentIcon: 'hide'
+                };
+            }
+            
+            const state = passwordToggleStates[inputId];
+            const input = document.getElementById(inputId);
+            
+            // Bỏ qua hover nếu đang trong trạng thái pause
+            if (state.hoverPaused) return;
+            
+            if (isHovering) {
+                // Khi hover vào - chuyển đổi với animation
+                if (!state.isRevealed) {
+                    // Chuyển từ ẩn sang hiện với animation
+                    input.type = 'text';
+                    animateIconTransition(button, 'hide', 'show');
+                } else {
+                    // Chuyển từ hiện sang ẩn với animation
+                    input.type = 'password';
+                    animateIconTransition(button, 'show', 'hide');
+                }
+            } else {
+                // Khi rời hover - trở về trạng thái gốc
+                if (!state.isRevealed) {
+                    // Trở về ẩn
+                    input.type = 'password';
+                    animateIconTransition(button, 'show', 'hide');
+                } else {
+                    // Trở về hiện
+                    input.type = 'text';
+                    animateIconTransition(button, 'hide', 'show');
+                }
             }
         }
 
-        // Hàm hover toggle password với hiệu ứng mượt mà
-        function hoverTogglePassword(inputId, button, isHovering) {
-            const input = document.getElementById(inputId);
+        // Hàm animation chuyển đổi icon mượt mà
+        function animateIconTransition(button, fromState, toState) {
             const hideIcon = button.querySelector('.hide-icon');
+            const partial1Icon = button.querySelector('.partial1-icon');
+            const partial2Icon = button.querySelector('.partial2-icon');
             const showIcon = button.querySelector('.show-icon');
             
-            if (isHovering) {
-                // Khi hover vào - chuyển đổi trạng thái hiển thị
-                if (input.type === 'password') {
-                    // Hiện mật khẩu và chuyển sang icon mắt mở
-                    input.type = 'text';
-                    hideIcon.style.opacity = '0';
-                    showIcon.style.opacity = '1';
+            // Ẩn tất cả icons
+            const hideAll = () => {
+                hideIcon.style.display = 'none';
+                partial1Icon.style.display = 'none';
+                partial2Icon.style.display = 'none';
+                showIcon.style.display = 'none';
+            };
+            
+            if (fromState === toState) {
+                updateIconDisplay(button, toState, false);
+                return;
+            }
+            
+            hideAll();
+            
+            if (fromState === 'hide' && toState === 'show') {
+                // Animation từ ẩn -> hiện: hide -> partial1 -> partial2 -> show
+                hideIcon.style.display = 'block';
+                setTimeout(() => {
                     hideIcon.style.display = 'none';
+                    partial1Icon.style.display = 'block';
+                }, 50);
+                setTimeout(() => {
+                    partial1Icon.style.display = 'none';
+                    partial2Icon.style.display = 'block';
+                }, 100);
+                setTimeout(() => {
+                    partial2Icon.style.display = 'none';
                     showIcon.style.display = 'block';
-                } else {
-                    // Ẩn mật khẩu và chuyển sang icon mắt gạch
-                    input.type = 'password';
-                    showIcon.style.opacity = '0';
-                    hideIcon.style.opacity = '1';
+                }, 150);
+            } else if (fromState === 'show' && toState === 'hide') {
+                // Animation từ hiện -> ẩn: show -> partial2 -> partial1 -> hide
+                showIcon.style.display = 'block';
+                setTimeout(() => {
                     showIcon.style.display = 'none';
+                    partial2Icon.style.display = 'block';
+                }, 50);
+                setTimeout(() => {
+                    partial2Icon.style.display = 'none';
+                    partial1Icon.style.display = 'block';
+                }, 100);
+                setTimeout(() => {
+                    partial1Icon.style.display = 'none';
                     hideIcon.style.display = 'block';
-                }
-            } else {
-                // Khi rời hover - trở về trạng thái ban đầu
-                if (input.type === 'text') {
-                    // Ẩn mật khẩu và chuyển sang icon mắt gạch
-                    input.type = 'password';
-                    showIcon.style.opacity = '0';
-                    hideIcon.style.opacity = '1';
-                    showIcon.style.display = 'none';
-                    hideIcon.style.display = 'block';
-                } else {
-                    // Giữ nguyên trạng thái ẩn
-                    hideIcon.style.opacity = '1';
-                    showIcon.style.opacity = '0';
-                    hideIcon.style.display = 'block';
-                    showIcon.style.display = 'none';
-                }
+                }, 150);
+            }
+        }
+
+        // Hàm cập nhật hiển thị icon trực tiếp
+        function updateIconDisplay(button, iconState, immediate = false) {
+            const hideIcon = button.querySelector('.hide-icon');
+            const partial1Icon = button.querySelector('.partial1-icon');
+            const partial2Icon = button.querySelector('.partial2-icon');
+            const showIcon = button.querySelector('.show-icon');
+            
+            // Ẩn tất cả
+            hideIcon.style.display = 'none';
+            partial1Icon.style.display = 'none';
+            partial2Icon.style.display = 'none';
+            showIcon.style.display = 'none';
+            
+            // Hiện icon phù hợp
+            if (iconState === 'hide') {
+                hideIcon.style.display = 'block';
+            } else if (iconState === 'show') {
+                showIcon.style.display = 'block';
             }
         }
 
@@ -641,6 +754,28 @@
             transition: all 0.3s ease;
         }
 
+        /* Fix chiều cao cố định cho password field để tránh giật */
+        .password-field {
+            height: 50px; /* Chiều cao cố định */
+            line-height: 1.4;
+            min-height: 50px;
+            max-height: 50px;
+            overflow: hidden;
+        }
+
+        /* Đảm bảo text và dots có cùng chiều cao */
+        .password-field[type="password"] {
+            letter-spacing: 3px; /* Tăng spacing cho dots */
+            font-family: monospace;
+            font-size: 16px;
+        }
+
+        .password-field[type="text"] {
+            letter-spacing: normal;
+            font-family: inherit;
+            font-size: 16px;
+        }
+
         .password-toggle {
             position: absolute;
             right: 12px;
@@ -654,6 +789,7 @@
             align-items: center;
             justify-content: center;
             border-radius: 4px;
+            z-index: 10;
         }
 
         .password-toggle:hover {
@@ -669,13 +805,38 @@
         .password-icon {
             width: 20px;
             height: 20px;
-            transition: all 0.4s ease;
+            transition: all 0.2s ease-in-out;
             opacity: 1;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
 
-        /* Hiệu ứng chuyển đổi mượt mà cho icons */
+        /* Hiệu ứng animation mượt mà cho các icon trung gian */
+        .password-icon.partial1-icon,
+        .password-icon.partial2-icon {
+            animation: iconPulse 0.15s ease-in-out;
+        }
+
+        @keyframes iconPulse {
+            0% { 
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+            50% { 
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+            100% { 
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        /* Hiệu ứng chuyển đổi mượt mà cho tất cả icons */
         .password-toggle:hover .password-icon {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         /* Hiệu ứng glow nhẹ cho input khi hover vào toggle */
@@ -685,17 +846,8 @@
             border-color: #ff6b35;
         }
 
-        /* Hiệu ứng animation cho việc chuyển đổi password */
-        .form-input[type="password"] {
-            letter-spacing: 2px;
-            font-family: monospace;
-        }
-
-        .form-input[type="text"] {
-            letter-spacing: normal;
-            font-family: inherit;
-        }
-
+        /* Hiệu ứng animation cho việc chuyển đổi password bị loại bỏ để tránh giật */
+        
         /* Responsive cho mobile */
         @media (max-width: 768px) {
             .password-toggle {
@@ -706,6 +858,24 @@
             .password-icon {
                 width: 18px;
                 height: 18px;
+            }
+            
+            .password-field {
+                height: 45px;
+                min-height: 45px;
+                max-height: 45px;
+                font-size: 14px;
+            }
+        }
+
+        /* Đảm bảo input container có chiều cao ổn định */
+        .password-input-container {
+            min-height: 50px;
+        }
+
+        @media (max-width: 768px) {
+            .password-input-container {
+                min-height: 45px;
             }
         }
     </style>
