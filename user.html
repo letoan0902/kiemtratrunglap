@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Panel - Hệ thống Kiểm tra Trùng lặp</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-content">
+            <div class="nav-brand">🧡 Kiểm tra Trùng lặp</div>
+            <div class="nav-links">
+                <span id="userInfo" class="nav-link"></span>
+                <a href="#" id="logoutBtn" class="nav-link">Đăng xuất</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Main Content -->
+        <div class="dashboard-container">
+            <!-- Add Data Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Thêm Dữ liệu</h2>
+                </div>
+                
+                <form id="addDataForm" novalidate>
+                    <div class="form-group">
+                        <label for="fieldSelect">Chọn trường</label>
+                        <div class="custom-select" id="fieldSelectContainer">
+                            <div class="select-trigger" id="fieldSelectTrigger">
+                                <span>Đang tải...</span>
+                                <span class="arrow">▼</span>
+                            </div>
+                            <ul class="select-options" id="fieldSelectOptions">
+                                <li data-value="">Đang tải...</li>
+                            </ul>
+                        </div>
+                        <div class="field-error" id="fieldSelectError"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="dataInput">Dữ liệu</label>
+                        <input type="text" id="dataInput" class="form-input" placeholder="Nhập dữ liệu cần kiểm tra" autocomplete="off">
+                        <small style="color: #666; font-size: 12px;">Hệ thống sẽ tự động kiểm tra trùng lặp</small>
+                        <div class="field-error" id="dataInputError"></div>
+                    </div>
+
+                    <!-- Duplicate Check Message - Moved above button -->
+                    <div id="duplicateCheck" class="mt-10 hidden fade-in">
+                        <div class="message" id="duplicateMessage"></div>
+                    </div>
+                    
+                    <button type="submit" id="addDataBtn" class="btn btn-primary btn-full">
+                        <span id="addBtnText">✅ Thêm & Kiểm tra</span>
+                        <div id="checkingSpinner" class="checking-spinner hidden"></div>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Recent Submissions -->
+            <div class="card mt-20" style="max-height: 400px;">
+                <div class="card-header">
+                    <h2 class="card-title">Dữ liệu vừa thêm gần đây</h2>
+                </div>
+                
+                <div id="recentDataContainer" style="max-height: 300px; overflow-y: auto;">
+                    <p style="text-align: center; color: #666; padding: 40px;">Đang tải dữ liệu...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Statistics - Moved below -->
+        <div class="stats mt-20" id="statsContainer">
+            <div class="stat-card">
+                <div class="stat-number" id="myContributions">0</div>
+                <div class="stat-label">Đóng góp của tôi</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="myFields">0</div>
+                <div class="stat-label">Trường được gán</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="todayContributions">0</div>
+                <div class="stat-label">Hôm nay</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/config.js"></script>
+    <script type="module">
+        // Import Firebase and auth system
+        import { authSystem } from './js/auth.js';
+
+        // Make it globally available
+        window.authSystem = authSystem;
+
+        class UserPanel {
+            constructor() {
+                this.currentUser = null;
+                this.assignedFields = [];
+                this.recentData = [];
+                this.fieldsCache = null;
+                this.lastFieldSelection = null;
+                this.isCheckingDuplicate = false;
+                this.customSelect = null;
+                this.init();
+            }
+
+            async init() {
+                // Wait for auth system to be ready
+                await this.waitForAuth();
+                
+                // Check authentication
+                if (!authSystem.requireAuth()) {
+                    return;
+                }
+
+                // Redirect admin to admin panel
+                if (authSystem.isAdmin()) {
+                    window.location.href = 'admin.html';
+                    return;
+                }
+
+                this.currentUser = authSystem.getCurrentUser();
+                this.setupEventListeners();
+                this.initCustomSelect();
+                await this.loadDataOptimized();
+                this.updateUI();
+            }
+
+            async waitForAuth() {
+                // Wait for Firebase and auth system to be ready
+                let attempts = 0;
+                while ((!window.authSystem || !authSystem.isLoggedIn()) && attempts < 100) {
+                    await new Promise(resolve => setTimeout(resolve, 30)); // Reduced wait time
+                    attempts++;
+                }
+            }
+
+            initCustomSelect() {
+                const container = document.getElementById('fieldSelectContainer');
+                const trigger = document.getElementById('fieldSelectTrigger');
+                const options = document.getElementById('fieldSelectOptions');
+
+                if (!container || !trigger || !options) return;
+
+                this.customSelect = {
+                    container,
+                    trigger,
+                    options,
+                    value: ''
+                };
+
+                // Click trigger to show/hide options
+                trigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggleCustomSelect();
+                });
+
+                // Click option to select
+                options.addEventListener('click', (e) => {
+                    const li = e.target.closest('li');
+                    if (!li) return;
+
+                    const value = li.dataset.value;
+                    const text = li.textContent;
+
+                    this.setCustomSelectValue(value, text);
+                    this.hideCustomSelect();
+
+                    // Clear field error and validation
+                    this.clearFieldError('fieldSelectError');
+                    this.clearFieldValidation('fieldSelect');
+                    
+                    if (value) {
+                        this.saveFieldSelection(value);
+                        this.loadRecentDataForField(value);
+                        this.markFieldValid('fieldSelect');
+                    } else {
+                        this.clearRecentData();
+                    }
+                    
+                    // Clear any previous duplicate check message when field changes
+                    document.getElementById('duplicateCheck').classList.add('hidden');
+                });
+
+                // Close when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!container.contains(e.target)) {
+                        this.hideCustomSelect();
+                    }
+                });
+            }
+
+            toggleCustomSelect() {
+                const isActive = this.customSelect.options.classList.contains('active');
+                
+                if (isActive) {
+                    this.hideCustomSelect();
+                } else {
+                    this.showCustomSelect();
+                }
+            }
+
+            showCustomSelect() {
+                this.customSelect.trigger.classList.add('active');
+                this.customSelect.options.classList.add('active');
+            }
+
+            hideCustomSelect() {
+                this.customSelect.trigger.classList.remove('active');
+                this.customSelect.options.classList.remove('active');
+            }
+
+            setCustomSelectValue(value, text) {
+                this.customSelect.value = value;
+                this.customSelect.trigger.querySelector('span').textContent = text;
+
+                // Update selected option
+                this.customSelect.options.querySelectorAll('li').forEach(li => {
+                    li.classList.remove('selected');
+                    if (li.dataset.value === value) {
+                        li.classList.add('selected');
+                    }
+                });
+            }
+
+            getCustomSelectValue() {
+                return this.customSelect ? this.customSelect.value : '';
+            }
+
+            populateCustomSelect(options) {
+                if (!this.customSelect) return;
+
+                const optionsHtml = options.map(option => 
+                    `<li data-value="${option.value}">${option.text}</li>`
+                ).join('');
+
+                this.customSelect.options.innerHTML = optionsHtml;
+            }
+
+            setupEventListeners() {
+                // Add data
+                document.getElementById('addDataForm').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    await this.handleAddData();
+                });
+
+                // Logout
+                document.getElementById('logoutBtn').addEventListener('click', () => {
+                    authSystem.logout();
+                });
+
+                // Clear duplicate check message when user types (no more real-time checking)
+                document.getElementById('dataInput').addEventListener('input', (e) => {
+                    document.getElementById('duplicateCheck').classList.add('hidden');
+                    this.clearFieldError('dataInputError');
+                    this.clearFieldValidation('dataInput');
+                    
+                    if (e.target.value.trim()) {
+                        this.markFieldValid('dataInput');
+                    }
+                });
+            }
+
+            // Optimized data loading - Load in parallel and cache
+            async loadDataOptimized() {
+                // Start all loading operations in parallel
+                const [fieldsPromise, statsPromise, recentDataPromise] = [
+                    this.loadAssignedFieldsOptimized(),
+                    this.loadStatisticsOptimized(),
+                    this.loadRecentDataOptimized()
+                ];
+
+                // Wait for fields first (needed for dropdown)
+                await fieldsPromise;
+                
+                // Load other data in background
+                Promise.all([statsPromise, recentDataPromise]);
+            }
+
+            async loadAssignedFieldsOptimized() {
+                // Use cached data if available and less than 30 seconds old
+                if (this.fieldsCache && (Date.now() - this.fieldsCache.timestamp) < 30000) {
+                    this.assignedFields = this.fieldsCache.data;
+                    this.populateFieldSelects();
+                    return;
+                }
+
+                try {
+                    const allFields = await authSystem.getFields();
+                    this.assignedFields = allFields;
+                    
+                    // Cache the data
+                    this.fieldsCache = {
+                        data: allFields,
+                        timestamp: Date.now()
+                    };
+                    
+                    this.populateFieldSelects();
+                } catch (error) {
+                    console.error('Error loading fields:', error);
+                    this.populateCustomSelect([{ value: '', text: 'Lỗi tải dữ liệu' }]);
+                }
+            }
+
+            populateFieldSelects() {
+                const options = [
+                    { value: '', text: 'Chọn trường dữ liệu' },
+                    ...this.assignedFields.map(field => ({ 
+                        value: field.id, 
+                        text: field.name 
+                    }))
+                ];
+                
+                this.populateCustomSelect(options);
+                
+                // Restore previous field selection
+                this.restoreFieldSelection();
+            }
+
+            restoreFieldSelection() {
+                const userKey = `lastField_${this.currentUser.email}`;
+                const savedFieldId = localStorage.getItem(userKey);
+                
+                if (savedFieldId) {
+                    const option = this.customSelect.options.querySelector(`li[data-value="${savedFieldId}"]`);
+                    if (option) {
+                        this.setCustomSelectValue(savedFieldId, option.textContent);
+                        this.lastFieldSelection = savedFieldId;
+                        // Load recent data for the restored field
+                        this.loadRecentDataForField(savedFieldId);
+                    }
+                }
+            }
+
+            saveFieldSelection(fieldId) {
+                const userKey = `lastField_${this.currentUser.email}`;
+                localStorage.setItem(userKey, fieldId);
+                this.lastFieldSelection = fieldId;
+            }
+
+            async loadStatisticsOptimized() {
+                // Use cached fields if available
+                const allFields = this.fieldsCache ? this.fieldsCache.data : await authSystem.getFields();
+                
+                let myContributions = 0;
+                let todayContributions = 0;
+                const today = new Date().toDateString();
+
+                // Optimized counting - break early when possible
+                for (const field of allFields) {
+                    const fieldData = field.data || [];
+                    for (const item of fieldData) {
+                        if (item.addedBy === this.currentUser.email) {
+                            myContributions++;
+                            if (new Date(item.addedAt).toDateString() === today) {
+                                todayContributions++;
+                            }
+                        }
+                    }
+                }
+
+                // Animate numbers faster
+                Utils.animateNumber(document.getElementById('myContributions'), 0, myContributions, 300);
+                Utils.animateNumber(document.getElementById('myFields'), 0, this.assignedFields.length, 300);
+                Utils.animateNumber(document.getElementById('todayContributions'), 0, todayContributions, 300);
+            }
+
+            async loadRecentDataOptimized() {
+                // Don't load recent data on init, wait for field selection
+                const container = document.getElementById('recentDataContainer');
+                container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Chọn trường để xem dữ liệu gần đây</p>';
+            }
+
+            async loadRecentDataForField(fieldId) {
+                const container = document.getElementById('recentDataContainer');
+                
+                try {
+                    // Use cached fields if available
+                    const allFields = this.fieldsCache ? this.fieldsCache.data : await authSystem.getFields();
+                    const field = allFields.find(f => f.id === fieldId);
+                    
+                    if (!field) {
+                        container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Không tìm thấy trường</p>';
+                        return;
+                    }
+
+                    let recentData = [];
+
+                    // Get data from selected field only
+                    const fieldData = field.data || [];
+                    for (const item of fieldData) {
+                        if (item.addedBy === this.currentUser.email) {
+                            recentData.push({
+                                ...item,
+                                fieldName: field.name,
+                                fieldId: field.id
+                            });
+                            
+                            // Limit to 5 items
+                            if (recentData.length >= 5) break;
+                        }
+                    }
+
+                    // Sort by date (newest first) and limit to 5
+                    recentData.sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt));
+                    recentData = recentData.slice(0, 5);
+
+                    this.renderRecentData(recentData, container);
+                } catch (error) {
+                    console.error('Error loading recent data:', error);
+                    container.innerHTML = '<p style="text-align: center; color: #f44336; padding: 20px;">Lỗi tải dữ liệu</p>';
+                }
+            }
+
+            renderRecentData(recentData, container) {
+                if (recentData.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Chưa có dữ liệu nào trong trường này.</p>';
+                } else {
+                    let html = '<div class="data-list">';
+                    recentData.forEach(item => {
+                        html += `
+                            <div class="data-item">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <strong>${item.value}</strong>
+                                        <br><small style="color: #666;">${Utils.formatDate(item.addedAt)}</small>
+                                    </div>
+                                    <span class="badge" style="background: #4caf50; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                                        Đã thêm
+                                    </span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    container.innerHTML = html;
+                }
+            }
+
+            clearRecentData() {
+                const container = document.getElementById('recentDataContainer');
+                container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Chọn trường để xem dữ liệu gần đây</p>';
+            }
+
+            clearFieldValidation(fieldId) {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.classList.remove('invalid', 'valid');
+                }
+            }
+
+            markFieldValid(fieldId) {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.classList.remove('invalid');
+                    field.classList.add('valid');
+                }
+            }
+
+            markFieldInvalid(fieldId) {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.classList.remove('valid');
+                    field.classList.add('invalid');
+                }
+            }
+
+            clearFieldError(fieldId) {
+                const errorElement = document.getElementById(fieldId);
+                if (errorElement) {
+                    errorElement.textContent = '';
+                    errorElement.classList.remove('show');
+                    errorElement.style.display = 'none';
+                }
+            }
+
+            showFieldError(fieldId, message) {
+                const errorElement = document.getElementById(fieldId);
+                if (errorElement) {
+                    errorElement.textContent = message;
+                    errorElement.classList.add('show');
+                    errorElement.style.display = 'block';
+                    
+                    // Mark field as invalid
+                    const fieldName = fieldId.replace('Error', '');
+                    this.markFieldInvalid(fieldName);
+                }
+            }
+
+            async handleAddData() {
+                const fieldId = this.getCustomSelectValue();
+                const data = document.getElementById('dataInput').value.trim();
+
+                // Clear previous errors and validation
+                this.clearFieldError('fieldSelectError');
+                this.clearFieldError('dataInputError');
+                this.clearFieldValidation('fieldSelect');
+                this.clearFieldValidation('dataInput');
+
+                let hasErrors = false;
+
+                // Validate field selection
+                if (!fieldId) {
+                    this.showFieldError('fieldSelectError', 'Vui lòng chọn trường dữ liệu!');
+                    hasErrors = true;
+                } else {
+                    this.markFieldValid('fieldSelect');
+                }
+
+                // Validate data input
+                if (!data) {
+                    this.showFieldError('dataInputError', 'Vui lòng nhập dữ liệu!');
+                    hasErrors = true;
+                } else if (data.length < 2) {
+                    this.showFieldError('dataInputError', 'Dữ liệu phải có ít nhất 2 ký tự!');
+                    hasErrors = true;
+                } else {
+                    this.markFieldValid('dataInput');
+                }
+
+                if (hasErrors) return;
+
+                // Start checking for duplicates
+                this.setButtonLoading(true);
+
+                try {
+                    // First check for duplicates
+                    const duplicateResult = await this.checkDuplicate(fieldId, data);
+                    
+                    if (duplicateResult.exists) {
+                        this.showDuplicateMessage('⚠️ Dữ liệu đã tồn tại!', 'error');
+                        this.setButtonLoading(false);
+                        return;
+                    }
+
+                    // If no duplicates, proceed to add data
+                    const result = await authSystem.addDataToField(fieldId, data);
+                    
+                    if (result.success) {
+                        this.showDuplicateMessage('✅ Thêm dữ liệu thành công!', 'success');
+                        document.getElementById('dataInput').value = '';
+                        this.clearFieldValidation('dataInput');
+                        
+                        // Clear cache to force refresh
+                        this.fieldsCache = null;
+                        
+                        // Reload all data including statistics
+                        await Promise.all([
+                            this.loadAssignedFieldsOptimized(),
+                            this.loadStatisticsOptimized(),
+                            this.loadRecentDataForField(fieldId)
+                        ]);
+                    } else {
+                        if (result.message.includes('đã tồn tại')) {
+                            this.showDuplicateMessage('⚠️ Dữ liệu đã tồn tại!', 'error');
+                        } else if (result.message.includes('không có quyền')) {
+                            this.showDuplicateMessage('❌ Bạn không có quyền truy cập trường này!', 'error');
+                        } else {
+                            this.showDuplicateMessage(result.message, 'error');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Add data error:', error);
+                    this.showDuplicateMessage('Có lỗi xảy ra khi thêm dữ liệu!', 'error');
+                } finally {
+                    this.setButtonLoading(false);
+                }
+            }
+
+            setButtonLoading(isLoading) {
+                const btnText = document.getElementById('addBtnText');
+                const spinner = document.getElementById('checkingSpinner');
+                
+                if (isLoading) {
+                    btnText.textContent = 'Đang kiểm tra...';
+                    spinner.classList.remove('hidden');
+                    spinner.style.display = 'inline-block';
+                } else {
+                    btnText.textContent = '✅ Thêm & Kiểm tra';
+                    spinner.classList.add('hidden');
+                    spinner.style.display = 'none';
+                }
+            }
+
+            async checkDuplicate(fieldId, data) {
+                // Use cached fields for faster checking
+                const fields = this.fieldsCache ? this.fieldsCache.data : await authSystem.getFields();
+                const field = fields.find(f => f.id === fieldId);
+                
+                if (!field) return { exists: false };
+
+                const existingData = (field.data || []).find(item => 
+                    item.value.toLowerCase() === data.toLowerCase()
+                );
+                
+                return {
+                    exists: !!existingData,
+                    data: existingData,
+                    fieldName: field.name
+                };
+            }
+
+            showDuplicateMessage(message, type) {
+                const messageDiv = document.getElementById('duplicateMessage');
+                const checkDiv = document.getElementById('duplicateCheck');
+                
+                // Set appropriate colors
+                if (type === 'success') {
+                    messageDiv.className = 'message';
+                    messageDiv.style.background = 'rgba(76, 175, 80, 0.1)';
+                    messageDiv.style.color = '#2e7d32';
+                    messageDiv.style.border = '1px solid rgba(76, 175, 80, 0.3)';
+                } else if (type === 'error') {
+                    messageDiv.className = 'message';
+                    messageDiv.style.background = 'rgba(244, 67, 54, 0.1)';
+                    messageDiv.style.color = '#d32f2f';
+                    messageDiv.style.border = '1px solid rgba(244, 67, 54, 0.3)';
+                } else {
+                    messageDiv.className = 'message';
+                    messageDiv.style.background = 'rgba(33, 150, 243, 0.1)';
+                    messageDiv.style.color = '#1976d2';
+                    messageDiv.style.border = '1px solid rgba(33, 150, 243, 0.3)';
+                }
+                
+                messageDiv.innerHTML = message;
+                checkDiv.classList.remove('hidden');
+                checkDiv.classList.add('fade-in');
+            }
+
+            updateUI() {
+                document.getElementById('userInfo').textContent = `👋 ${this.currentUser.name}`;
+            }
+        }
+
+        // Make UserPanel globally available
+        window.UserPanel = UserPanel;
+
+        // Initialize user panel
+        let userPanel;
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Wait for auth system to be ready
+            let attempts = 0;
+            while (!window.authSystem && attempts < 100) {
+                await new Promise(resolve => setTimeout(resolve, 30));
+                attempts++;
+            }
+            
+            userPanel = new UserPanel();
+            window.userPanel = userPanel;
+        });
+    </script>
+
+    <style>
+        /* Checking spinner for duplicate check */
+        .checking-spinner {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-left: 10px;
+        }
+
+        .checking-spinner.hidden {
+            display: none !important;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Improved button layout */
+        #addDataBtn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Better positioning for duplicate check */
+        .mt-10 {
+            margin-top: 10px;
+        }
+
+        /* Enhanced fade-in animation */
+        .fade-in {
+            animation: fadeInUp 0.3s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Field error styling */
+        .field-error {
+            color: #d32f2f;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+            min-height: 16px;
+            background: rgba(244, 67, 54, 0.1);
+            padding: 5px 8px;
+            border-radius: 4px;
+            border-left: 3px solid #f44336;
+        }
+
+        /* Data list improvements */
+        .data-list {
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        .data-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 179, 128, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .data-item:hover {
+            background: rgba(255, 179, 128, 0.1);
+            transform: translateY(-1px);
+        }
+
+        /* Custom Select for User Page */
+        .custom-select {
+            position: relative;
+            width: 100%;
+            z-index: 10;
+        }
+
+        .select-trigger {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border: 2px solid #ffb380;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-size: 16px;
+            min-height: 54px;
+            box-sizing: border-box;
+        }
+
+        .select-trigger:hover {
+            border-color: #ff6b35;
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .select-trigger.active {
+            border-color: #ff6b35;
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .select-trigger .arrow {
+            transition: transform 0.15s ease;
+            color: #ff6b35;
+            font-weight: bold;
+        }
+
+        .select-trigger.active .arrow {
+            transform: rotate(180deg);
+        }
+
+        .select-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #ff6b35;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .select-options.active {
+            display: block;
+            animation: slideDown 0.15s ease-out;
+        }
+
+        .select-options li {
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border-bottom: 1px solid rgba(255, 179, 128, 0.2);
+        }
+
+        .select-options li:last-child {
+            border-bottom: none;
+        }
+
+        .select-options li:hover {
+            background: rgba(255, 107, 53, 0.1);
+            color: #ff6b35;
+        }
+
+        .select-options li.selected {
+            background: linear-gradient(135deg, #ff6b35 0%, #ff9a56 100%);
+            color: white;
+            font-weight: 500;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</body>
+</html>

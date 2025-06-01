@@ -1,0 +1,2181 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Hệ thống Kiểm tra Trùng lặp</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- SheetJS Library for Excel Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-content">
+            <div class="nav-brand">🧡 Admin Panel</div>
+            <div class="nav-links">
+                <span id="userInfo" class="nav-link"></span>
+                <a href="#" id="logoutBtn" class="nav-link">Đăng xuất</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Statistics -->
+        <div class="stats" id="statsContainer">
+            <div class="stat-card">
+                <div class="stat-number" id="totalUsers">0</div>
+                <div class="stat-label">Người dùng</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalFields">0</div>
+                <div class="stat-label">Trường dữ liệu</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalData">0</div>
+                <div class="stat-label">Tổng dữ liệu</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalDuplicates">0</div>
+                <div class="stat-label">Trùng lặp</div>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation" style="margin-bottom: 30px; border-bottom: 2px solid #ffb380;">
+            <button class="tab-btn active" data-tab="users">👥 Quản lý Người dùng</button>
+            <button class="tab-btn" data-tab="fields">📊 Quản lý Trường</button>
+            <button class="tab-btn" data-tab="data">💾 Xem Dữ liệu</button>
+            <button class="tab-btn" data-tab="userdata">👤 Kiểm tra User Data</button>
+            <button class="tab-btn" data-tab="export">📤 Xuất dữ liệu</button>
+        </div>
+
+        <!-- Users Tab -->
+        <div class="tab-content active" id="tab-users">
+            <div class="dashboard-container">
+                <div class="card-header">
+                    <h2 class="card-title">Quản lý Người dùng</h2>
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <div class="search-container">
+                            <input type="text" id="userSearchBox" class="form-input search-input" placeholder="🔍 Tìm kiếm người dùng..." style="width: 250px; margin: 0;">
+                            <button class="search-clear-btn" id="userSearchClear" title="Xóa tìm kiếm">×</button>
+                        </div>
+                        <button class="btn btn-primary" id="addUserBtn">➕ Thêm người dùng</button>
+                    </div>
+                </div>
+                
+                <!-- Column Search Row -->
+                <div class="column-search-container" id="userColumnSearch" style="display: none;">
+                    <div class="column-search-grid">
+                        <div class="column-search-item">
+                            <label>Tên:</label>
+                            <div class="search-container">
+                                <input type="text" class="column-search-input" data-column="0" placeholder="Tìm theo tên...">
+                                <button class="search-clear-btn" onclick="this.previousElementSibling.value=''; this.closest('.column-search-container').dispatchEvent(new Event('search'));">×</button>
+                            </div>
+                        </div>
+                        <div class="column-search-item">
+                            <label>Email:</label>
+                            <div class="search-container">
+                                <input type="text" class="column-search-input" data-column="1" placeholder="Tìm theo email...">
+                                <button class="search-clear-btn" onclick="this.previousElementSibling.value=''; this.closest('.column-search-container').dispatchEvent(new Event('search'));">×</button>
+                            </div>
+                        </div>
+                        <div class="column-search-item">
+                            <label>Ngày tạo:</label>
+                            <div class="search-container">
+                                <input type="text" class="column-search-input" data-column="3" placeholder="Tìm theo ngày...">
+                                <button class="search-clear-btn" onclick="this.previousElementSibling.value=''; this.closest('.column-search-container').dispatchEvent(new Event('search'));">×</button>
+                            </div>
+                        </div>
+                        <div class="column-search-item">
+                            <label>Tạo bởi:</label>
+                            <div class="search-container">
+                                <input type="text" class="column-search-input" data-column="4" placeholder="Tìm theo người tạo...">
+                                <button class="search-clear-btn" onclick="this.previousElementSibling.value=''; this.closest('.column-search-container').dispatchEvent(new Event('search'));">×</button>
+                            </div>
+                        </div>
+                        <div class="column-search-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="adminPanel.clearAllColumnSearch('userColumnSearch')">Xóa tất cả</button>
+                            <button class="btn btn-secondary btn-sm" onclick="adminPanel.hideColumnSearch('userColumnSearch')">Ẩn</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="usersTableContainer">
+                    <!-- Users table will be generated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Fields Tab -->
+        <div class="tab-content" id="tab-fields">
+            <div class="dashboard-container">
+                <div class="card-header">
+                    <h2 class="card-title">Quản lý Trường Dữ liệu</h2>
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <div class="search-container">
+                            <input type="text" id="fieldSearchBox" class="form-input search-input" placeholder="🔍 Tìm kiếm trường..." style="width: 250px; margin: 0;">
+                            <button class="search-clear-btn" id="fieldSearchClear" title="Xóa tìm kiếm">×</button>
+                        </div>
+                        <button class="btn btn-primary" id="addFieldBtn">➕ Thêm trường</button>
+                    </div>
+                </div>
+                
+                <!-- Column Search Row -->
+                <div class="column-search-container" id="fieldColumnSearch" style="display: none;">
+                    <div class="column-search-grid">
+                        <div class="column-search-item">
+                            <label>Tên trường:</label>
+                            <div class="search-container">
+                                <input type="text" class="column-search-input" data-column="0" placeholder="Tìm theo tên...">
+                                <button class="search-clear-btn" onclick="this.previousElementSibling.value=''; this.closest('.column-search-container').dispatchEvent(new Event('search'));">×</button>
+                            </div>
+                        </div>
+                        <div class="column-search-item">
+                            <label>Mô tả:</label>
+                            <div class="search-container">
+                                <input type="text" class="column-search-input" data-column="1" placeholder="Tìm theo mô tả...">
+                                <button class="search-clear-btn" onclick="this.previousElementSibling.value=''; this.closest('.column-search-container').dispatchEvent(new Event('search'));">×</button>
+                            </div>
+                        </div>
+                        <div class="column-search-item">
+                            <label>Ngày tạo:</label>
+                            <div class="search-container">
+                                <input type="text" class="column-search-input" data-column="4" placeholder="Tìm theo ngày...">
+                                <button class="search-clear-btn" onclick="this.previousElementSibling.value=''; this.closest('.column-search-container').dispatchEvent(new Event('search'));">×</button>
+                            </div>
+                        </div>
+                        <div class="column-search-item">
+                            <label>Tạo bởi:</label>
+                            <div class="search-container">
+                                <input type="text" class="column-search-input" data-column="5" placeholder="Tìm theo người tạo...">
+                                <button class="search-clear-btn" onclick="this.previousElementSibling.value=''; this.closest('.column-search-container').dispatchEvent(new Event('search'));">×</button>
+                            </div>
+                        </div>
+                        <div class="column-search-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="adminPanel.clearAllColumnSearch('fieldColumnSearch')">Xóa tất cả</button>
+                            <button class="btn btn-secondary btn-sm" onclick="adminPanel.hideColumnSearch('fieldColumnSearch')">Ẩn</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="fieldsTableContainer">
+                    <!-- Fields table will be generated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Tab -->
+        <div class="tab-content" id="tab-data">
+            <div class="dashboard-container">
+                <div class="card-header">
+                    <h2 class="card-title">Xem Dữ liệu Theo Trường</h2>
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <div class="search-container">
+                            <input type="text" id="dataSearchBox" class="form-input search-input" placeholder="🔍 Tìm kiếm dữ liệu..." style="width: 250px; margin: 0;">
+                            <button class="search-clear-btn" id="dataSearchClear" title="Xóa tìm kiếm">×</button>
+                        </div>
+                        <div class="custom-select" id="fieldSelectContainer">
+                            <div class="select-trigger" id="fieldSelectTrigger">
+                                <span>Chọn trường để xem</span>
+                                <span class="arrow">▼</span>
+                            </div>
+                            <ul class="select-options" id="fieldSelectOptions">
+                                <li data-value="">Chọn trường để xem</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Column Search Row -->
+                <div class="column-search-container" id="dataColumnSearch" style="display: none;">
+                    <div class="column-search-grid">
+                        <div class="column-search-item">
+                            <label>Dữ liệu:</label>
+                            <div class="search-container">
+                                <input type="text" class="column-search-input" data-column="0" placeholder="Tìm theo dữ liệu...">
+                                <button class="search-clear-btn" onclick="this.previousElementSibling.value=''; this.closest('.column-search-container').dispatchEvent(new Event('search'));">×</button>
+                            </div>
+                        </div>
+                        <div class="column-search-item">
+                            <label>Thêm bởi:</label>
+                            <div class="search-container">
+                                <input type="text" class="column-search-input" data-column="1" placeholder="Tìm theo người thêm...">
+                                <button class="search-clear-btn" onclick="this.previousElementSibling.value=''; this.closest('.column-search-container').dispatchEvent(new Event('search'));">×</button>
+                            </div>
+                        </div>
+                        <div class="column-search-item">
+                            <label>Ngày thêm:</label>
+                            <div class="search-container">
+                                <input type="text" class="column-search-input" data-column="2" placeholder="Tìm theo ngày...">
+                                <button class="search-clear-btn" onclick="this.previousElementSibling.value=''; this.closest('.column-search-container').dispatchEvent(new Event('search'));">×</button>
+                            </div>
+                        </div>
+                        <div class="column-search-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="adminPanel.clearAllColumnSearch('dataColumnSearch')">Xóa tất cả</button>
+                            <button class="btn btn-secondary btn-sm" onclick="adminPanel.hideColumnSearch('dataColumnSearch')">Ẩn</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="dataTableContainer">
+                    <!-- Data table will be generated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- User Data Review Tab -->
+        <div class="tab-content" id="tab-userdata">
+            <div class="dashboard-container">
+                <div class="card-header">
+                    <h2 class="card-title">Kiểm tra Dữ liệu User Chi tiết</h2>
+                    <div class="btn-group">
+                        <div class="custom-select" id="userDataUserSelectContainer">
+                            <div class="select-trigger" id="userDataUserSelectTrigger">
+                                <span>Tất cả người dùng</span>
+                                <span class="arrow">▼</span>
+                            </div>
+                            <ul class="select-options" id="userDataUserSelectOptions">
+                                <li data-value="">Tất cả người dùng</li>
+                            </ul>
+                        </div>
+                        <div class="custom-select" id="userDataFieldSelectContainer">
+                            <div class="select-trigger" id="userDataFieldSelectTrigger">
+                                <span>Tất cả trường</span>
+                                <span class="arrow">▼</span>
+                            </div>
+                            <ul class="select-options" id="userDataFieldSelectOptions">
+                                <li data-value="">Tất cả trường</li>
+                            </ul>
+                        </div>
+                        <button class="btn btn-success" id="exportUserDataBtn">📊 Xuất Excel</button>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-3">
+                        <div class="stat-card">
+                            <div class="stat-number" id="userDataTotal">0</div>
+                            <div class="stat-label">Tổng dữ liệu</div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="stat-card">
+                            <div class="stat-number" id="userDataToday">0</div>
+                            <div class="stat-label">Hôm nay</div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="stat-card">
+                            <div class="stat-number" id="userDataUsers">0</div>
+                            <div class="stat-label">Người đóng góp</div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="stat-card">
+                            <div class="stat-number" id="userDataContributors">0</div>
+                            <div class="stat-label">Tổng người đóng góp</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="userDataTableContainer">
+                    <!-- User data table will be generated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Tab -->
+        <div class="tab-content" id="tab-export">
+            <div class="dashboard-container">
+                <div class="card-header">
+                    <h2 class="card-title">Xuất Dữ liệu</h2>
+                </div>
+                
+                <div class="row">
+                    <div class="col-2">
+                        <div class="card">
+                            <h3>Xuất tất cả dữ liệu</h3>
+                            <p>Xuất toàn bộ dữ liệu từ tất cả các trường</p>
+                            <button class="btn btn-success btn-full" id="exportAllBtn">📊 Xuất Excel</button>
+                        </div>
+                    </div>
+                    <div class="col-2">
+                        <div class="card">
+                            <h3>Xuất theo trường</h3>
+                            <div class="form-group">
+                                <div class="custom-select" id="exportFieldSelectContainer">
+                                    <div class="select-trigger" id="exportFieldSelectTrigger">
+                                        <span>Chọn trường</span>
+                                        <span class="arrow">▼</span>
+                                    </div>
+                                    <ul class="select-options" id="exportFieldSelectOptions">
+                                        <li data-value="">Chọn trường</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <button class="btn btn-secondary btn-full" id="exportFieldBtn">📋 Xuất trường</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/config.js"></script>
+    <script type="module">
+        // Import Firebase and auth system
+        import { authSystem } from './js/auth.js';
+
+        // Make it globally available
+        window.authSystem = authSystem;
+
+        class AdminPanel {
+            constructor() {
+                this.currentTab = 'users';
+                this.customSelects = new Map();
+                this.searchTimers = new Map();
+                this.columnSearchStates = new Map();
+                this.allUsers = [];
+                this.allFields = [];
+                this.allData = [];
+                this.init();
+            }
+
+            async init() {
+                // Wait for auth system to be ready
+                await this.waitForAuth();
+                
+                // Check authentication
+                if (!authSystem.requireAdmin()) {
+                    return;
+                }
+
+                this.setupEventListeners();
+                await this.loadData();
+                this.updateUI();
+                this.initCustomSelects();
+            }
+
+            async waitForAuth() {
+                // Wait for Firebase and auth system to be ready
+                let attempts = 0;
+                while ((!window.authSystem || !authSystem.isLoggedIn()) && attempts < 100) {
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                    attempts++;
+                }
+            }
+
+            setupEventListeners() {
+                // Tab navigation
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        this.switchTab(e.target.dataset.tab);
+                    });
+                });
+
+                // User management
+                document.getElementById('addUserBtn').addEventListener('click', () => {
+                    this.showAddUserModal();
+                });
+
+                // Field management
+                document.getElementById('addFieldBtn').addEventListener('click', () => {
+                    this.showAddFieldModal();
+                });
+
+                // Export functions
+                document.getElementById('exportAllBtn').addEventListener('click', () => {
+                    this.exportAllDataExcel();
+                });
+
+                document.getElementById('exportFieldBtn').addEventListener('click', () => {
+                    this.exportFieldDataExcel();
+                });
+
+                document.getElementById('exportUserDataBtn').addEventListener('click', () => {
+                    this.exportUserDataExcel();
+                });
+
+                // Logout
+                document.getElementById('logoutBtn').addEventListener('click', () => {
+                    authSystem.logout();
+                });
+
+                // Enhanced search setup
+                this.setupEnhancedSearch();
+            }
+
+            setupEnhancedSearch() {
+                // Setup clear buttons and enhanced search for each tab
+                this.setupTabSearch('users', 'userSearchBox', 'userSearchClear', 'userColumnSearch');
+                this.setupTabSearch('fields', 'fieldSearchBox', 'fieldSearchClear', 'fieldColumnSearch');
+                this.setupTabSearch('data', 'dataSearchBox', 'dataSearchClear', 'dataColumnSearch');
+            }
+
+            setupTabSearch(tabName, searchBoxId, clearBtnId, columnSearchId) {
+                const searchBox = document.getElementById(searchBoxId);
+                const clearBtn = document.getElementById(clearBtnId);
+                const columnSearchContainer = document.getElementById(columnSearchId);
+
+                // Clear button functionality
+                clearBtn.addEventListener('click', () => {
+                    searchBox.value = '';
+                    this.clearSearch(tabName);
+                    this.updateSearchUI(searchBox, '');
+                });
+
+                // Search input with enhanced features
+                searchBox.addEventListener('input', (e) => {
+                    const value = e.target.value;
+                    this.handleSearch(tabName, value);
+                    this.updateSearchUI(searchBox, value);
+                });
+
+                // Column search setup
+                if (columnSearchContainer) {
+                    this.setupColumnSearch(tabName, columnSearchContainer);
+                }
+            }
+
+            updateSearchUI(searchInput, value) {
+                const clearBtn = searchInput.parentElement.querySelector('.search-clear-btn');
+                
+                if (value.trim()) {
+                    clearBtn.style.opacity = '1';
+                    clearBtn.style.pointerEvents = 'auto';
+                } else {
+                    clearBtn.style.opacity = '0.3';
+                    clearBtn.style.pointerEvents = 'none';
+                }
+            }
+
+            setupColumnSearch(tabName, container) {
+                const inputs = container.querySelectorAll('.column-search-input');
+                
+                inputs.forEach(input => {
+                    input.addEventListener('input', () => {
+                        this.handleColumnSearch(tabName, container);
+                    });
+                });
+
+                // Listen for search event from clear buttons
+                container.addEventListener('search', () => {
+                    this.handleColumnSearch(tabName, container);
+                });
+            }
+
+            handleColumnSearch(tabName, container) {
+                const inputs = container.querySelectorAll('.column-search-input');
+                const searchCriteria = {};
+                
+                inputs.forEach(input => {
+                    const columnIndex = parseInt(input.dataset.column);
+                    const value = input.value.trim();
+                    if (value) {
+                        searchCriteria[columnIndex] = value.toLowerCase();
+                    }
+                });
+
+                this.performColumnSearch(tabName, searchCriteria);
+            }
+
+            performColumnSearch(tabName, criteria) {
+                const tables = document.querySelectorAll(`#${tabName}TableContainer table`);
+                
+                tables.forEach(table => {
+                    const rows = table.querySelectorAll('tbody tr');
+                    let visibleCount = 0;
+                    
+                    rows.forEach(row => {
+                        const cells = row.querySelectorAll('td');
+                        let matches = true;
+                        
+                        // Check each search criteria
+                        for (const [columnIndex, searchValue] of Object.entries(criteria)) {
+                            const colIndex = parseInt(columnIndex);
+                            if (colIndex >= 0 && colIndex < cells.length) {
+                                const cellText = cells[colIndex].textContent.toLowerCase();
+                                if (!cellText.includes(searchValue)) {
+                                    matches = false;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (matches) {
+                            row.style.display = '';
+                            row.classList.add('search-highlight');
+                            visibleCount++;
+                            setTimeout(() => row.classList.remove('search-highlight'), 1000);
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                    
+                    // Update table info if exists
+                    this.updateTableInfo(table, visibleCount, rows.length);
+                });
+            }
+
+            getColumnIndex(table, columnKey) {
+                // This function is no longer needed since we use direct column indexes
+                // But keeping it for compatibility
+                const columnMap = {
+                    'name': 0,
+                    'email': 1,
+                    'assignedFields': 2,
+                    'createdAt': 3,
+                    'createdBy': 4,
+                    'description': 1,
+                    'value': 0,
+                    'addedByUsername': 1,
+                    'addedAt': 2
+                };
+                
+                return columnMap[columnKey] || -1;
+            }
+
+            updateTableInfo(table, visibleCount, totalCount) {
+                let infoElement = table.parentElement.querySelector('.table-search-info');
+                if (!infoElement) {
+                    infoElement = document.createElement('div');
+                    infoElement.className = 'table-search-info';
+                    infoElement.style.cssText = `
+                        text-align: center;
+                        padding: 8px;
+                        background: rgba(255, 179, 128, 0.1);
+                        border-radius: 6px;
+                        margin: 10px 0;
+                        font-size: 14px;
+                        color: #666;
+                    `;
+                    table.parentElement.insertBefore(infoElement, table);
+                }
+                
+                if (visibleCount < totalCount) {
+                    infoElement.textContent = `Hiển thị ${visibleCount} trong ${totalCount} mục`;
+                    infoElement.style.display = 'block';
+                } else {
+                    infoElement.style.display = 'none';
+                }
+            }
+
+            clearAllColumnSearch(containerId) {
+                const container = document.getElementById(containerId);
+                const inputs = container.querySelectorAll('.column-search-input');
+                
+                inputs.forEach(input => {
+                    input.value = '';
+                });
+                
+                // Clear the search
+                const tabName = containerId.replace('ColumnSearch', '').replace('user', 'users');
+                this.performColumnSearch(tabName, {});
+            }
+
+            hideColumnSearch(containerId) {
+                const container = document.getElementById(containerId);
+                container.style.display = 'none';
+                
+                // Also clear any active search
+                this.clearAllColumnSearch(containerId);
+            }
+
+            showColumnSearch(containerId) {
+                const container = document.getElementById(containerId);
+                container.style.display = 'block';
+            }
+
+            handleSearch(type, searchTerm) {
+                // Clear previous timer
+                if (this.searchTimers.has(type)) {
+                    clearTimeout(this.searchTimers.get(type));
+                }
+
+                // Set new timer for debounced search
+                const timer = setTimeout(() => {
+                    this.performSearch(type, searchTerm);
+                }, 300);
+
+                this.searchTimers.set(type, timer);
+            }
+
+            performSearch(type, searchTerm) {
+                const tables = document.querySelectorAll(`#${type}TableContainer table`);
+                tables.forEach(table => {
+                    const rows = table.querySelectorAll('tbody tr');
+                    let visibleCount = 0;
+                    
+                    rows.forEach(row => {
+                        const text = row.textContent.toLowerCase();
+                        const matches = searchTerm.toLowerCase().split(' ').every(term => 
+                            text.includes(term)
+                        );
+                        
+                        if (matches) {
+                            row.style.display = '';
+                            visibleCount++;
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                    
+                    this.updateTableInfo(table, visibleCount, rows.length);
+                });
+            }
+
+            clearSearch(type) {
+                const tables = document.querySelectorAll(`#${type}TableContainer table`);
+                tables.forEach(table => {
+                    const rows = table.querySelectorAll('tbody tr');
+                    rows.forEach(row => {
+                        row.style.display = '';
+                    });
+                    
+                    // Hide table info
+                    const infoElement = table.parentElement.querySelector('.table-search-info');
+                    if (infoElement) {
+                        infoElement.style.display = 'none';
+                    }
+                });
+            }
+
+            // Reset search when switching tabs
+            resetTabSearch(previousTab) {
+                if (previousTab) {
+                    // Clear general search
+                    const searchBoxId = previousTab === 'users' ? 'userSearchBox' : 
+                                       previousTab === 'fields' ? 'fieldSearchBox' : 
+                                       previousTab === 'data' ? 'dataSearchBox' : null;
+                    
+                    if (searchBoxId) {
+                        const searchBox = document.getElementById(searchBoxId);
+                        if (searchBox) {
+                            searchBox.value = '';
+                            this.updateSearchUI(searchBox, '');
+                        }
+                        this.clearSearch(previousTab);
+                    }
+                    
+                    // Clear column search
+                    const columnSearchId = previousTab === 'users' ? 'userColumnSearch' : 
+                                         previousTab === 'fields' ? 'fieldColumnSearch' : 
+                                         previousTab === 'data' ? 'dataColumnSearch' : null;
+                    
+                    if (columnSearchId) {
+                        this.hideColumnSearch(columnSearchId);
+                    }
+                }
+            }
+
+            initCustomSelects() {
+                // Initialize all custom selects
+                this.initCustomSelect('fieldSelectContainer', 'fieldSelectTrigger', 'fieldSelectOptions', (value) => {
+                    this.loadFieldData(value);
+                });
+
+                this.initCustomSelect('userDataUserSelectContainer', 'userDataUserSelectTrigger', 'userDataUserSelectOptions', () => {
+                    this.loadUserData();
+                });
+
+                this.initCustomSelect('userDataFieldSelectContainer', 'userDataFieldSelectTrigger', 'userDataFieldSelectOptions', () => {
+                    this.loadUserData();
+                });
+
+                this.initCustomSelect('exportFieldSelectContainer', 'exportFieldSelectTrigger', 'exportFieldSelectOptions');
+            }
+
+            initCustomSelect(containerId, triggerId, optionsId, onChange = null) {
+                const container = document.getElementById(containerId);
+                const trigger = document.getElementById(triggerId);
+                const options = document.getElementById(optionsId);
+
+                if (!container || !trigger || !options) return;
+
+                // Store reference
+                const selectData = {
+                    container,
+                    trigger,
+                    options,
+                    value: '',
+                    onChange
+                };
+
+                this.customSelects.set(containerId, selectData);
+
+                // Click trigger to show/hide options
+                trigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggleCustomSelect(containerId);
+                });
+
+                // Click option to select
+                options.addEventListener('click', (e) => {
+                    const li = e.target.closest('li');
+                    if (!li) return;
+
+                    const value = li.dataset.value;
+                    const text = li.textContent;
+
+                    this.setCustomSelectValue(containerId, value, text);
+                    this.hideCustomSelect(containerId);
+
+                    if (onChange) {
+                        onChange(value);
+                    }
+                });
+
+                // Close when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!container.contains(e.target)) {
+                        this.hideCustomSelect(containerId);
+                    }
+                });
+            }
+
+            toggleCustomSelect(containerId) {
+                const selectData = this.customSelects.get(containerId);
+                if (!selectData) return;
+
+                const isActive = selectData.options.classList.contains('active');
+                
+                // Close all other selects
+                this.customSelects.forEach((data, id) => {
+                    if (id !== containerId) {
+                        this.hideCustomSelect(id);
+                    }
+                });
+
+                if (isActive) {
+                    this.hideCustomSelect(containerId);
+                } else {
+                    this.showCustomSelect(containerId);
+                }
+            }
+
+            showCustomSelect(containerId) {
+                const selectData = this.customSelects.get(containerId);
+                if (!selectData) return;
+
+                selectData.trigger.classList.add('active');
+                selectData.options.classList.add('active');
+            }
+
+            hideCustomSelect(containerId) {
+                const selectData = this.customSelects.get(containerId);
+                if (!selectData) return;
+
+                selectData.trigger.classList.remove('active');
+                selectData.options.classList.remove('active');
+            }
+
+            setCustomSelectValue(containerId, value, text) {
+                const selectData = this.customSelects.get(containerId);
+                if (!selectData) return;
+
+                selectData.value = value;
+                selectData.trigger.querySelector('span').textContent = text;
+
+                // Update selected option
+                selectData.options.querySelectorAll('li').forEach(li => {
+                    li.classList.remove('selected');
+                    if (li.dataset.value === value) {
+                        li.classList.add('selected');
+                    }
+                });
+            }
+
+            getCustomSelectValue(containerId) {
+                const selectData = this.customSelects.get(containerId);
+                return selectData ? selectData.value : '';
+            }
+
+            populateCustomSelect(containerId, options) {
+                const selectData = this.customSelects.get(containerId);
+                if (!selectData) return;
+
+                const optionsHtml = options.map(option => 
+                    `<li data-value="${option.value}">${option.text}</li>`
+                ).join('');
+
+                selectData.options.innerHTML = optionsHtml;
+            }
+
+            switchTab(tabName) {
+                // Reset search for previous tab
+                this.resetTabSearch(this.currentTab);
+                
+                // Update active tab button
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+                // Update active tab content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(`tab-${tabName}`).classList.add('active');
+
+                this.currentTab = tabName;
+
+                // Load specific data for tab
+                if (tabName === 'data') {
+                    this.loadFieldOptions();
+                } else if (tabName === 'export') {
+                    this.loadExportOptions();
+                } else if (tabName === 'userdata') {
+                    this.loadUserDataOptions();
+                }
+            }
+
+            async loadData() {
+                await this.loadStatistics();
+                await this.loadUsers();
+                await this.loadFields();
+            }
+
+            async loadStatistics() {
+                const users = await authSystem.getUsers();
+                const fields = await authSystem.getFields();
+                let totalData = 0;
+                let totalDuplicates = 0;
+
+                fields.forEach(field => {
+                    totalData += (field.data || []).length;
+                    // Check for duplicates within field
+                    const values = (field.data || []).map(item => item.value);
+                    const duplicates = values.filter((value, index) => values.indexOf(value) !== index);
+                    totalDuplicates += duplicates.length;
+                });
+
+                // Animate numbers
+                Utils.animateNumber(document.getElementById('totalUsers'), 0, users.length);
+                Utils.animateNumber(document.getElementById('totalFields'), 0, fields.length);
+                Utils.animateNumber(document.getElementById('totalData'), 0, totalData);
+                Utils.animateNumber(document.getElementById('totalDuplicates'), 0, totalDuplicates);
+            }
+
+            async loadUsers() {
+                const users = await authSystem.getUsers();
+                const container = document.getElementById('usersTableContainer');
+
+                const columns = [
+                    { key: 'name', title: 'Tên', searchable: true },
+                    { key: 'email', title: 'Email', searchable: true },
+                    { key: 'assignedFields', title: 'Trường được gán', render: (fields) => (fields || []).length + ' trường' },
+                    { key: 'createdAt', title: 'Ngày tạo', type: 'dateShort', searchable: true },
+                    { key: 'createdBy', title: 'Tạo bởi', searchable: true }
+                ];
+
+                const options = {
+                    actions: (user) => `
+                        <button class="btn btn-secondary" onclick="adminPanel.editUser('${user.id}')" style="margin-right: 5px; padding: 5px 10px;">✏️</button>
+                        <button class="btn btn-danger" onclick="adminPanel.deleteUser('${user.id}')" style="padding: 5px 10px;">🗑️</button>
+                    `,
+                    onHeaderClick: (column, index) => {
+                        if (column.searchable) {
+                            this.showColumnSearch('userColumnSearch');
+                        }
+                    }
+                };
+
+                const table = Utils.createTable(users, columns, options);
+                container.innerHTML = '';
+                container.appendChild(table);
+                
+                // Add click handlers to searchable headers
+                this.addHeaderClickHandlers(table, 'userColumnSearch');
+            }
+
+            async loadFields() {
+                const fields = await authSystem.getAllFieldsForAdmin();
+                const users = await authSystem.getUsers();
+                const container = document.getElementById('fieldsTableContainer');
+
+                const columns = [
+                    { key: 'name', title: 'Tên trường', searchable: true },
+                    { key: 'description', title: 'Mô tả', searchable: true },
+                    { 
+                        key: 'data', 
+                        title: 'Số lượng dữ liệu', 
+                        render: (data) => (data || []).length + ' mục' 
+                    },
+                    { 
+                        key: 'assignedUsers', 
+                        title: 'Gán', 
+                        render: (assignedUsers, field) => {
+                            const assignedCount = this.getAssignedUserCount(field.id, users);
+                            return `<button class="btn btn-secondary" onclick="adminPanel.showFieldAssignmentModal('${field.id}')" style="padding: 5px 10px;">${assignedCount} người</button>`;
+                        }
+                    },
+                    { key: 'createdAt', title: 'Ngày tạo', type: 'dateShort', searchable: true },
+                    { key: 'createdBy', title: 'Tạo bởi', searchable: true }
+                ];
+
+                const options = {
+                    actions: (field) => `
+                        <button class="btn btn-secondary" onclick="adminPanel.editField('${field.id}')" style="margin-right: 5px; padding: 5px 10px;">✏️</button>
+                        <button class="btn btn-danger" onclick="adminPanel.deleteField('${field.id}')" style="padding: 5px 10px;">🗑️</button>
+                    `,
+                    pagination: true,
+                    itemsPerPage: 10,
+                    onHeaderClick: (column, index) => {
+                        if (column.searchable) {
+                            this.showColumnSearch('fieldColumnSearch');
+                        }
+                    }
+                };
+
+                const table = Utils.createTable(fields, columns, options);
+                container.innerHTML = '';
+                container.appendChild(table);
+                
+                // Add click handlers to searchable headers
+                this.addHeaderClickHandlers(table, 'fieldColumnSearch');
+            }
+
+            addHeaderClickHandlers(table, columnSearchId) {
+                const headers = table.querySelectorAll('thead th');
+                headers.forEach((header, index) => {
+                    const headerText = header.textContent.trim().toLowerCase();
+                    
+                    // Only add click handlers to searchable columns
+                    if (headerText.includes('tên') || headerText.includes('email') || 
+                        headerText.includes('mô tả') || headerText.includes('ngày') ||
+                        headerText.includes('dữ liệu') || headerText.includes('thêm bởi') ||
+                        headerText.includes('tạo bởi')) {
+                        
+                        header.classList.add('searchable');
+                        header.addEventListener('click', () => {
+                            this.showColumnSearch(columnSearchId);
+                            
+                            // Focus on relevant input based on header content
+                            setTimeout(() => {
+                                const container = document.getElementById(columnSearchId);
+                                const inputs = container.querySelectorAll('.column-search-input');
+                                
+                                // Map header text to appropriate input
+                                let targetInput = null;
+                                if (headerText.includes('tên')) {
+                                    targetInput = inputs[0]; // First input (name)
+                                } else if (headerText.includes('email')) {
+                                    targetInput = inputs[1]; // Second input (email)
+                                } else if (headerText.includes('mô tả')) {
+                                    targetInput = inputs[1]; // Description (for fields)
+                                } else if (headerText.includes('dữ liệu') || headerText.includes('thêm bởi')) {
+                                    targetInput = inputs[1]; // Data or added by
+                                } else if (headerText.includes('ngày')) {
+                                    // Find the date input (varies by tab)
+                                    targetInput = Array.from(inputs).find(input => 
+                                        input.placeholder.includes('ngày')
+                                    );
+                                } else if (headerText.includes('tạo bởi')) {
+                                    // Find the created by input
+                                    targetInput = Array.from(inputs).find(input => 
+                                        input.placeholder.includes('người tạo')
+                                    );
+                                }
+                                
+                                if (targetInput) {
+                                    targetInput.focus();
+                                }
+                            }, 100);
+                        });
+                    }
+                });
+            }
+
+            getAssignedUserCount(fieldId, users) {
+                return users.filter(user => 
+                    user.assignedFields && user.assignedFields.includes(fieldId)
+                ).length;
+            }
+
+            async showFieldAssignmentModal(fieldId) {
+                const fields = await authSystem.getAllFieldsForAdmin();
+                const users = await authSystem.getUsers();
+                const field = fields.find(f => f.id === fieldId);
+                
+                if (!field) {
+                    Utils.showError('Không tìm thấy trường!');
+                    return;
+                }
+
+                let assignedUserIds = users.filter(user => 
+                    user.assignedFields && user.assignedFields.includes(fieldId)
+                ).map(user => user.id);
+
+                let unassignedUserIds = users.filter(user => 
+                    !user.assignedFields || !user.assignedFields.includes(fieldId)
+                ).map(user => user.id);
+
+                const modal = Utils.createModal({
+                    title: `Quản lý gán trường: ${field.name}`,
+                    content: `
+                        <div>
+                            <input type="text" id="userSearchInput" class="search-input" placeholder="🔍 Tìm kiếm người dùng...">
+                            
+                            <div class="field-assignment-container">
+                                <div class="field-assignment-column">
+                                    <div class="field-assignment-header">
+                                        <h4 style="margin: 0; color: #ff9800;">Chưa được gán (<span id="unassignedCount">${unassignedUserIds.length}</span>)</h4>
+                                        <button class="btn btn-success" id="assignAllBtn" style="padding: 6px 12px; font-size: 12px;">
+                                            ➕ Gán tất cả
+                                        </button>
+                                    </div>
+                                    <div id="unassignedUsersList" class="field-assignment-list unassigned">
+                                        ${this.renderUserList(users, unassignedUserIds, 'unassigned', fieldId)}
+                                    </div>
+                                </div>
+                                
+                                <div class="field-assignment-column">
+                                    <div class="field-assignment-header">
+                                        <h4 style="margin: 0; color: #4caf50;">Đã được gán (<span id="assignedCount">${assignedUserIds.length}</span>)</h4>
+                                        <button class="btn btn-danger" id="removeAllBtn" style="padding: 6px 12px; font-size: 12px;">
+                                            ➖ Bỏ gán tất cả
+                                        </button>
+                                    </div>
+                                    <div id="assignedUsersList" class="field-assignment-list assigned">
+                                        ${this.renderUserList(users, assignedUserIds, 'assigned', fieldId)}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="modal-actions">
+                                <button class="btn btn-secondary" id="closeModalBtn">Đóng</button>
+                                <button class="btn btn-primary" id="saveAssignmentsBtn">💾 Lưu thay đổi</button>
+                            </div>
+                        </div>
+                    `,
+                    size: 'large',
+                    closable: true
+                });
+
+                // Store current state
+                modal.fieldId = fieldId;
+                modal.assignedUserIds = new Set(assignedUserIds);
+                modal.unassignedUserIds = new Set(unassignedUserIds);
+                modal.users = users;
+
+                // Add search functionality
+                document.getElementById('userSearchInput').addEventListener('input', (e) => {
+                    this.filterUsersInModal(e.target.value, modal);
+                });
+
+                // Assign all button
+                document.getElementById('assignAllBtn').addEventListener('click', () => {
+                    this.assignAllUsers(modal);
+                });
+
+                // Remove all button  
+                document.getElementById('removeAllBtn').addEventListener('click', () => {
+                    this.removeAllUsers(modal);
+                });
+
+                // Close button
+                document.getElementById('closeModalBtn').addEventListener('click', () => {
+                    modal.style.display = 'none';
+                    document.body.removeChild(modal);
+                });
+
+                // Save button
+                document.getElementById('saveAssignmentsBtn').addEventListener('click', async () => {
+                    await this.saveFieldAssignments(modal);
+                });
+
+                // Prevent modal from closing when clicking overlay
+                modal.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+
+                modal.querySelector('.modal-content').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+            }
+
+            renderUserList(users, userIds, type, fieldId) {
+                return Array.from(userIds).map(userId => {
+                    const user = users.find(u => u.id === userId);
+                    if (!user) return '';
+                    
+                    return `
+                        <div class="user-item" data-user-id="${user.id}" data-user-name="${user.name}">
+                            <span>${user.name} (${user.email})</span>
+                            <button class="btn ${type === 'assigned' ? 'btn-danger' : 'btn-success'}" 
+                                    onclick="adminPanel.${type === 'assigned' ? 'removeUserFromField' : 'addUserToField'}('${user.id}')" 
+                                    style="padding: 2px 8px; margin-left: 10px;">
+                                ${type === 'assigned' ? '×' : '+'}
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            addUserToField(userId) {
+                const modal = document.querySelector('.modal[style*="flex"]');
+                if (!modal) return;
+
+                // Move user from unassigned to assigned
+                modal.unassignedUserIds.delete(userId);
+                modal.assignedUserIds.add(userId);
+
+                // Update the UI
+                this.updateModalUserLists(modal);
+            }
+
+            removeUserFromField(userId) {
+                const modal = document.querySelector('.modal[style*="flex"]');
+                if (!modal) return;
+
+                // Move user from assigned to unassigned
+                modal.assignedUserIds.delete(userId);
+                modal.unassignedUserIds.add(userId);
+
+                // Update the UI
+                this.updateModalUserLists(modal);
+            }
+
+            assignAllUsers(modal) {
+                // Move all unassigned users to assigned
+                modal.unassignedUserIds.forEach(userId => {
+                    modal.assignedUserIds.add(userId);
+                });
+                modal.unassignedUserIds.clear();
+
+                this.updateModalUserLists(modal);
+            }
+
+            removeAllUsers(modal) {
+                // Move all assigned users to unassigned
+                modal.assignedUserIds.forEach(userId => {
+                    modal.unassignedUserIds.add(userId);
+                });
+                modal.assignedUserIds.clear();
+
+                this.updateModalUserLists(modal);
+            }
+
+            updateModalUserLists(modal) {
+                const unassignedContainer = document.getElementById('unassignedUsersList');
+                const assignedContainer = document.getElementById('assignedUsersList');
+                const unassignedCount = document.getElementById('unassignedCount');
+                const assignedCount = document.getElementById('assignedCount');
+
+                unassignedContainer.innerHTML = this.renderUserList(modal.users, modal.unassignedUserIds, 'unassigned', modal.fieldId);
+                assignedContainer.innerHTML = this.renderUserList(modal.users, modal.assignedUserIds, 'assigned', modal.fieldId);
+                
+                unassignedCount.textContent = modal.unassignedUserIds.size;
+                assignedCount.textContent = modal.assignedUserIds.size;
+            }
+
+            filterUsersInModal(searchTerm, modal) {
+                const userItems = document.querySelectorAll('.user-item');
+                userItems.forEach(item => {
+                    const userName = item.dataset.userName.toLowerCase();
+                    const userEmail = item.querySelector('span').textContent.toLowerCase();
+                    if (userName.includes(searchTerm.toLowerCase()) || userEmail.includes(searchTerm.toLowerCase())) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            }
+
+            async saveFieldAssignments(modal) {
+                try {
+                    Utils.showInfo('Đang lưu thay đổi...');
+
+                    // Update each user's assigned fields
+                    const updatePromises = modal.users.map(async (user) => {
+                        const currentFields = user.assignedFields || [];
+                        let newFields = [...currentFields];
+
+                        if (modal.assignedUserIds.has(user.id)) {
+                            // User should have this field assigned
+                            if (!newFields.includes(modal.fieldId)) {
+                                newFields.push(modal.fieldId);
+                            }
+                        } else {
+                            // User should not have this field assigned
+                            newFields = newFields.filter(fieldId => fieldId !== modal.fieldId);
+                        }
+
+                        // Only update if there's a change
+                        if (JSON.stringify(currentFields.sort()) !== JSON.stringify(newFields.sort())) {
+                            return authSystem.updateUser(user.id, {
+                                assignedFields: newFields
+                            });
+                        }
+                        return { success: true };
+                    });
+
+                    const results = await Promise.all(updatePromises);
+                    const failures = results.filter(result => !result.success);
+
+                    if (failures.length === 0) {
+                        Utils.showSuccess('Lưu gán trường thành công!');
+                        
+                        // Close modal
+                        modal.style.display = 'none';
+                        document.body.removeChild(modal);
+                        
+                        // Refresh the fields table and users table
+                        await Promise.all([
+                            this.loadFields(),
+                            this.loadUsers()
+                        ]);
+                    } else {
+                        Utils.showError(`Có ${failures.length} lỗi khi cập nhật. Vui lòng thử lại!`);
+                    }
+                } catch (error) {
+                    console.error('Save field assignments error:', error);
+                    Utils.showError('Có lỗi xảy ra khi lưu gán trường!');
+                }
+            }
+
+            async loadFieldOptions() {
+                const fields = await authSystem.getAllFieldsForAdmin();
+                
+                const fieldOptions = [
+                    { value: '', text: 'Chọn trường để xem' },
+                    ...fields.map(field => ({ value: field.id, text: field.name }))
+                ];
+
+                const exportFieldOptions = [
+                    { value: '', text: 'Chọn trường' },
+                    ...fields.map(field => ({ value: field.id, text: field.name }))
+                ];
+
+                this.populateCustomSelect('fieldSelectContainer', fieldOptions);
+                this.populateCustomSelect('exportFieldSelectContainer', exportFieldOptions);
+            }
+
+            async loadExportOptions() {
+                await this.loadFieldOptions();
+            }
+
+            async loadFieldData(fieldId) {
+                if (!fieldId) {
+                    document.getElementById('dataTableContainer').innerHTML = '';
+                    return;
+                }
+
+                const fields = await authSystem.getAllFieldsForAdmin();
+                const users = await authSystem.getUsers();
+                const field = fields.find(f => f.id === fieldId);
+                
+                if (!field) return;
+
+                const container = document.getElementById('dataTableContainer');
+                
+                // Map data with usernames
+                const dataWithUsernames = (field.data || []).map(item => {
+                    const user = users.find(u => u.email === item.addedBy);
+                    return {
+                        ...item,
+                        addedByUsername: user ? user.username || user.name : item.addedBy
+                    };
+                });
+                
+                const columns = [
+                    { key: 'value', title: 'Dữ liệu', searchable: true },
+                    { key: 'addedByUsername', title: 'Thêm bởi', searchable: true },
+                    { key: 'addedAt', title: 'Ngày thêm', type: 'date', searchable: true }
+                ];
+
+                const options = {
+                    actions: (data) => `
+                        <button class="btn btn-danger" onclick="adminPanel.deleteData('${fieldId}', '${data.id}')" style="padding: 5px 10px;">🗑️</button>
+                    `,
+                    pagination: true,
+                    itemsPerPage: 10,
+                    onHeaderClick: (column, index) => {
+                        if (column.searchable) {
+                            this.showColumnSearch('dataColumnSearch');
+                        }
+                    }
+                };
+
+                const table = Utils.createTable(dataWithUsernames, columns, options);
+                container.innerHTML = `<h3>Dữ liệu trong trường: ${field.name}</h3>`;
+                container.appendChild(table);
+                
+                // Add click handlers to searchable headers
+                this.addHeaderClickHandlers(table, 'dataColumnSearch');
+            }
+
+            showAddUserModal() {
+                const modal = Utils.createModal({
+                    title: 'Thêm Người Dùng Mới',
+                    content: `
+                        <form id="createUserForm" autocomplete="off">
+                            <div class="form-group">
+                                <label for="userUsername">Tên đăng nhập</label>
+                                <input type="text" id="userUsername" class="form-input" placeholder="Nhập tên đăng nhập" required autocomplete="new-password">
+                                <div class="field-error" id="usernameError"></div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="userEmail">Email (tùy chọn)</label>
+                                <input type="text" id="userEmail" class="form-input" placeholder="Nhập email hoặc để trống" autocomplete="new-password">
+                                <div class="field-error" id="emailError"></div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="userPassword">Mật khẩu (để trống sẽ dùng 123456)</label>
+                                <input type="password" id="userPassword" class="form-input" placeholder="Nhập mật khẩu hoặc để trống" autocomplete="new-password">
+                                <div class="field-error" id="passwordError"></div>
+                            </div>
+                            
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').style.display='none'; document.body.removeChild(this.closest('.modal'));">Hủy</button>
+                                <button type="submit" id="createUserBtn" class="btn btn-primary">👤 Tạo Người dùng</button>
+                            </div>
+                        </form>
+                    `,
+                    closable: true
+                });
+
+                // Prevent modal from closing when clicking overlay
+                modal.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+
+                modal.querySelector('.modal-content').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+
+                document.getElementById('createUserForm').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    await this.handleAddUser(modal);
+                });
+            }
+
+            async handleAddUser(modal) {
+                // Clear previous errors
+                this.clearFieldErrors();
+
+                const username = document.getElementById('userUsername').value.trim();
+                const email = document.getElementById('userEmail').value.trim() || null;
+                const password = document.getElementById('userPassword').value.trim() || '123456';
+
+                let hasErrors = false;
+
+                // Validate username
+                if (!username) {
+                    this.showFieldError('usernameError', 'Vui lòng nhập tên đăng nhập!');
+                    hasErrors = true;
+                } else if (username.length < 3) {
+                    this.showFieldError('usernameError', 'Tên đăng nhập phải có ít nhất 3 ký tự!');
+                    hasErrors = true;
+                }
+
+                // Validate password if provided
+                if (password && password.length < 6 && password !== '123456') {
+                    this.showFieldError('passwordError', 'Mật khẩu phải có ít nhất 6 ký tự!');
+                    hasErrors = true;
+                }
+
+                if (hasErrors) return;
+
+                // Name = username for display
+                const name = username;
+
+                try {
+                    const result = await authSystem.createUser({ name, email, username, password });
+                    
+                    if (result.success) {
+                        Utils.showSuccess('Thêm người dùng thành công!');
+                        modal.style.display = 'none';
+                        document.body.removeChild(modal);
+                        await this.loadUsers();
+                        await this.loadStatistics();
+                    } else {
+                        // Check for specific field errors
+                        if (result.message.includes('Tên người dùng đã tồn tại') || result.message.includes('username')) {
+                            this.showFieldError('usernameError', result.message);
+                        } else if (result.message.includes('Email đã tồn tại') || result.message.includes('email')) {
+                            this.showFieldError('emailError', result.message);
+                        } else {
+                            // System error - show modal
+                            this.showSystemErrorModal(result.message);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Create user error:', error);
+                    this.showSystemErrorModal('Có lỗi hệ thống xảy ra khi tạo người dùng!');
+                }
+            }
+
+            showFieldError(fieldId, message) {
+                const errorElement = document.getElementById(fieldId);
+                if (errorElement) {
+                    errorElement.textContent = message;
+                    errorElement.style.display = 'block';
+                }
+            }
+
+            clearFieldErrors() {
+                const errorElements = document.querySelectorAll('.field-error');
+                errorElements.forEach(element => {
+                    element.textContent = '';
+                    element.style.display = 'none';
+                });
+            }
+
+            showSystemErrorModal(message) {
+                const errorModal = Utils.createModal({
+                    title: '❌ Lỗi Hệ Thống',
+                    content: `
+                        <div style="text-align: center; padding: 20px;">
+                            <p style="color: #d32f2f; font-size: 16px; margin-bottom: 20px;">${message}</p>
+                            <button class="btn btn-secondary" onclick="this.closest('.modal').style.display='none'; document.body.removeChild(this.closest('.modal'));">Đóng</button>
+                        </div>
+                    `,
+                    size: 'small',
+                    closable: true
+                });
+            }
+
+            showAddFieldModal() {
+                const modal = Utils.createModal({
+                    title: 'Thêm Trường Dữ Liệu Mới',
+                    content: `
+                        <form id="addFieldForm">
+                            <div class="form-group">
+                                <label>Tên trường</label>
+                                <input type="text" id="fieldName" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Mô tả</label>
+                                <textarea id="fieldDescription" class="form-input" rows="3"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 10px;">
+                                    <input type="checkbox" id="assignToAll" checked> 
+                                    Gán cho tất cả người dùng hiện tại
+                                </label>
+                            </div>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').style.display='none'; document.body.removeChild(this.closest('.modal'));">Hủy</button>
+                                <button type="submit" class="btn btn-primary">Thêm trường</button>
+                            </div>
+                        </form>
+                    `,
+                    size: 'medium',
+                    closable: true
+                });
+
+                // Prevent modal from closing when clicking overlay
+                modal.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+
+                modal.querySelector('.modal-content').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+
+                document.getElementById('addFieldForm').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    await this.handleAddField(modal);
+                });
+            }
+
+            async handleAddField(modal) {
+                const name = document.getElementById('fieldName').value.trim();
+                const description = document.getElementById('fieldDescription').value.trim();
+                const assignToAll = document.getElementById('assignToAll').checked;
+
+                if (!name) {
+                    Utils.showError('Vui lòng nhập tên trường!');
+                    return;
+                }
+
+                const result = await authSystem.createField({ name, description });
+                
+                if (result.success) {
+                    // If assign to all is checked, assign this field to all users
+                    if (assignToAll) {
+                        await this.assignFieldToAllUsers(result.field.id);
+                    }
+                    
+                    Utils.showSuccess('Thêm trường thành công!');
+                    modal.style.display = 'none';
+                    document.body.removeChild(modal);
+                    await this.loadFields();
+                    await this.loadStatistics();
+                } else {
+                    Utils.showError(result.message);
+                }
+            }
+
+            async assignFieldToAllUsers(fieldId) {
+                try {
+                    const users = await authSystem.getUsers();
+                    
+                    for (const user of users) {
+                        const currentFields = user.assignedFields || [];
+                        if (!currentFields.includes(fieldId)) {
+                            const updatedFields = [...currentFields, fieldId];
+                            await authSystem.updateUser(user.id, {
+                                assignedFields: updatedFields
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error assigning field to all users:', error);
+                    Utils.showWarning('Trường đã được tạo nhưng có lỗi khi gán cho tất cả người dùng');
+                }
+            }
+
+            async editUser(userId) {
+                // Get user data first
+                const users = await authSystem.getUsers();
+                const user = users.find(u => u.id === userId);
+                
+                if (!user) {
+                    Utils.showError('Không tìm thấy người dùng!');
+                    return;
+                }
+
+                const modal = Utils.createModal({
+                    title: 'Chỉnh sửa Người Dùng',
+                    content: `
+                        <form id="editUserForm">
+                            <div class="form-group">
+                                <label for="editUserUsername">Tên đăng nhập</label>
+                                <input type="text" id="editUserUsername" class="form-input" value="${user.username || user.email}" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="editUserEmail">Email</label>
+                                <input type="text" id="editUserEmail" class="form-input" value="${user.email || ''}" placeholder="Email (tùy chọn)">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="editUserPassword">Mật khẩu mới (để trống nếu không đổi)</label>
+                                <input type="password" id="editUserPassword" class="form-input" placeholder="Nhập mật khẩu mới">
+                            </div>
+                            
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').style.display='none'; document.body.removeChild(this.closest('.modal'));">Hủy</button>
+                                <button type="submit" class="btn btn-primary">Cập nhật</button>
+                            </div>
+                        </form>
+                    `,
+                    closable: true
+                });
+
+                // Prevent modal from closing when clicking overlay
+                modal.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+
+                modal.querySelector('.modal-content').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+
+                document.getElementById('editUserForm').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    await this.handleEditUser(modal, userId);
+                });
+            }
+
+            async handleEditUser(modal, userId) {
+                const username = document.getElementById('editUserUsername').value.trim();
+                const email = document.getElementById('editUserEmail').value.trim() || null;
+                const password = document.getElementById('editUserPassword').value.trim();
+
+                if (!username) {
+                    Utils.showError('Vui lòng nhập tên đăng nhập!');
+                    return;
+                }
+
+                const updateData = {
+                    name: username, // Name = username
+                    username: username,
+                    email: email
+                };
+
+                // Only update password if provided
+                if (password) {
+                    updateData.password = password;
+                }
+
+                const result = await authSystem.updateUser(userId, updateData);
+                
+                if (result.success) {
+                    Utils.showSuccess('Cập nhật người dùng thành công!');
+                    modal.style.display = 'none';
+                    document.body.removeChild(modal);
+                    await this.loadUsers();
+                } else {
+                    Utils.showError(result.message);
+                }
+            }
+
+            async deleteUser(userId) {
+                const confirmed = await Utils.confirmDialog('Bạn có chắc chắn muốn xóa người dùng này?', 'small');
+                if (!confirmed) return;
+
+                const result = await authSystem.deleteUser(userId);
+                if (result.success) {
+                    Utils.showSuccess('Xóa người dùng thành công!');
+                    await this.loadUsers();
+                    await this.loadStatistics();
+                } else {
+                    Utils.showError(result.message);
+                }
+            }
+
+            async editField(fieldId) {
+                // Get field data first
+                const fields = await authSystem.getAllFieldsForAdmin();
+                const users = await authSystem.getUsers();
+                const field = fields.find(f => f.id === fieldId);
+                
+                if (!field) {
+                    Utils.showError('Không tìm thấy trường!');
+                    return;
+                }
+
+                // Get assigned users
+                const assignedUsers = users.filter(user => 
+                    user.assignedFields && user.assignedFields.includes(fieldId)
+                );
+
+                const modal = Utils.createModal({
+                    title: 'Chỉnh sửa Trường Dữ Liệu',
+                    content: `
+                        <form id="editFieldForm">
+                            <div class="form-group">
+                                <label>Tên trường</label>
+                                <input type="text" id="editFieldName" class="form-input" value="${field.name}" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Mô tả</label>
+                                <textarea id="editFieldDescription" class="form-input" rows="3">${field.description || ''}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Người dùng được gán (${assignedUsers.length})</label>
+                                <button type="button" class="btn btn-secondary" onclick="adminPanel.showFieldAssignmentModal('${fieldId}')" style="width: 100%; margin-top: 5px;">
+                                    Quản lý gán người dùng
+                                </button>
+                                <small style="color: #666;">Hiện tại: ${assignedUsers.map(u => u.name).join(', ') || 'Chưa gán ai'}</small>
+                            </div>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').style.display='none'; document.body.removeChild(this.closest('.modal'));">Hủy</button>
+                                <button type="submit" class="btn btn-primary">Cập nhật</button>
+                            </div>
+                        </form>
+                    `,
+                    size: 'medium',
+                    closable: true
+                });
+
+                // Prevent modal from closing when clicking overlay
+                modal.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+
+                modal.querySelector('.modal-content').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+
+                document.getElementById('editFieldForm').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    await this.handleEditField(modal, fieldId);
+                });
+            }
+
+            async handleEditField(modal, fieldId) {
+                const name = document.getElementById('editFieldName').value.trim();
+                const description = document.getElementById('editFieldDescription').value.trim();
+
+                if (!name) {
+                    Utils.showError('Vui lòng nhập tên trường!');
+                    return;
+                }
+
+                const result = await authSystem.updateField(fieldId, { name, description });
+                
+                if (result.success) {
+                    Utils.showSuccess('Cập nhật trường thành công!');
+                    modal.style.display = 'none';
+                    document.body.removeChild(modal);
+                    await this.loadFields();
+                } else {
+                    Utils.showError(result.message);
+                }
+            }
+
+            async deleteField(fieldId) {
+                const confirmed = await Utils.confirmDialog('Bạn có chắc chắn muốn xóa trường này? Tất cả dữ liệu trong trường sẽ bị mất!', 'small');
+                if (!confirmed) return;
+
+                const result = await authSystem.deleteField(fieldId);
+                if (result.success) {
+                    Utils.showSuccess('Xóa trường thành công!');
+                    await this.loadFields();
+                    await this.loadStatistics();
+                } else {
+                    Utils.showError(result.message);
+                }
+            }
+
+            async deleteData(fieldId, dataId) {
+                const confirmed = await Utils.confirmDialog('Bạn có chắc chắn muốn xóa dữ liệu này?', 'small');
+                if (!confirmed) return;
+
+                const result = await authSystem.removeDataFromField(fieldId, dataId);
+                if (result.success) {
+                    Utils.showSuccess('Xóa dữ liệu thành công!');
+                    await this.loadFieldData(fieldId);
+                    await this.loadStatistics();
+                } else {
+                    Utils.showError(result.message);
+                }
+            }
+
+            async exportAllDataExcel() {
+                Utils.showInfo('Đang chuẩn bị xuất dữ liệu Excel...');
+                
+                try {
+                    const fields = await authSystem.getAllFieldsForAdmin();
+                    const users = await authSystem.getUsers();
+                    
+                    // Create workbook
+                    const wb = XLSX.utils.book_new();
+                    
+                    // Process each field
+                    fields.forEach(field => {
+                        if (!field.data || field.data.length === 0) return;
+                        
+                        // Prepare data for this field
+                        const fieldData = field.data.map(item => {
+                            const user = users.find(u => u.email === item.addedBy);
+                            return {
+                                'Dữ liệu': item.value,
+                                'Người thêm': user ? user.name : item.addedBy,
+                                'Email': item.addedBy,
+                                'Ngày thêm': Utils.formatDate(item.addedAt)
+                            };
+                        });
+                        
+                        // Create worksheet for this field
+                        const ws = XLSX.utils.json_to_sheet(fieldData);
+                        
+                        // Auto-size columns based on content (max 50 chars)
+                        const columnWidths = this.calculateColumnWidths(fieldData, 50);
+                        ws['!cols'] = columnWidths;
+                        
+                        // Add worksheet to workbook
+                        const sheetName = this.sanitizeSheetName(field.name);
+                        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+                    });
+                    
+                    // Generate and download file
+                    const fileName = `toan_bo_du_lieu_${new Date().toISOString().split('T')[0]}.xlsx`;
+                    XLSX.writeFile(wb, fileName);
+                    
+                    Utils.showSuccess('Xuất dữ liệu Excel thành công!');
+                } catch (error) {
+                    console.error('Export error:', error);
+                    Utils.showError('Có lỗi xảy ra khi xuất dữ liệu Excel!');
+                }
+            }
+
+            async exportFieldDataExcel() {
+                const fieldId = this.getCustomSelectValue('exportFieldSelectContainer');
+                if (!fieldId) {
+                    Utils.showError('Vui lòng chọn trường để xuất!');
+                    return;
+                }
+
+                Utils.showInfo('Đang chuẩn bị xuất dữ liệu Excel...');
+                
+                try {
+                    const fields = await authSystem.getAllFieldsForAdmin();
+                    const users = await authSystem.getUsers();
+                    const field = fields.find(f => f.id === fieldId);
+                    
+                    if (!field) {
+                        Utils.showError('Không tìm thấy trường!');
+                        return;
+                    }
+
+                    if (!field.data || field.data.length === 0) {
+                        Utils.showWarning('Trường này chưa có dữ liệu!');
+                        return;
+                    }
+                    
+                    // Prepare data
+                    const fieldData = field.data.map(item => {
+                        const user = users.find(u => u.email === item.addedBy);
+                        return {
+                            'Dữ liệu': item.value,
+                            'Người thêm': user ? user.name : item.addedBy,
+                            'Email': item.addedBy,
+                            'Ngày thêm': Utils.formatDate(item.addedAt)
+                        };
+                    });
+                    
+                    // Create workbook and worksheet
+                    const wb = XLSX.utils.book_new();
+                    const ws = XLSX.utils.json_to_sheet(fieldData);
+                    
+                    // Auto-size columns
+                    const columnWidths = this.calculateColumnWidths(fieldData, 50);
+                    ws['!cols'] = columnWidths;
+                    
+                    // Add worksheet to workbook
+                    XLSX.utils.book_append_sheet(wb, ws, 'Dữ liệu');
+                    
+                    // Generate and download file
+                    const fileName = `${this.sanitizeFileName(field.name)}_${new Date().toISOString().split('T')[0]}.xlsx`;
+                    XLSX.writeFile(wb, fileName);
+                    
+                    Utils.showSuccess('Xuất dữ liệu Excel thành công!');
+                } catch (error) {
+                    console.error('Export error:', error);
+                    Utils.showError('Có lỗi xảy ra khi xuất dữ liệu Excel!');
+                }
+            }
+
+            async exportUserDataExcel() {
+                const userFilter = this.getCustomSelectValue('userDataUserSelectContainer');
+                const fieldFilter = this.getCustomSelectValue('userDataFieldSelectContainer');
+                
+                Utils.showInfo('Đang chuẩn bị xuất dữ liệu người dùng...');
+                
+                try {
+                    const fields = await authSystem.getAllFieldsForAdmin();
+                    const users = await authSystem.getUsers();
+                    
+                    let allUserData = [];
+                    
+                    // Collect all user-submitted data
+                    fields.forEach(field => {
+                        if (fieldFilter && field.id !== fieldFilter) return;
+                        
+                        (field.data || []).forEach(item => {
+                            // Skip admin-added data  
+                            if (item.addedBy === 'letoan242' || item.addedBy === 'trinhhanh261293@gmail.com') return;
+                            
+                            if (userFilter && item.addedBy !== userFilter) return;
+                            
+                            // Find user info
+                            const user = users.find(u => u.email === item.addedBy);
+                            
+                            allUserData.push({
+                                'Người dùng': user ? user.name : 'Unknown User',
+                                'Email': item.addedBy,
+                                'Trường': field.name,
+                                'Dữ liệu': item.value,
+                                'Ngày thêm': Utils.formatDate(item.addedAt)
+                            });
+                        });
+                    });
+
+                    if (allUserData.length === 0) {
+                        Utils.showWarning('Không có dữ liệu để xuất!');
+                        return;
+                    }
+                    
+                    // Create workbook and worksheet
+                    const wb = XLSX.utils.book_new();
+                    const ws = XLSX.utils.json_to_sheet(allUserData);
+                    
+                    // Auto-size columns
+                    const columnWidths = this.calculateColumnWidths(allUserData, 50);
+                    ws['!cols'] = columnWidths;
+                    
+                    // Add worksheet to workbook
+                    XLSX.utils.book_append_sheet(wb, ws, 'Dữ liệu người dùng');
+                    
+                    // Generate and download file
+                    const fileName = `du_lieu_nguoi_dung_${new Date().toISOString().split('T')[0]}.xlsx`;
+                    XLSX.writeFile(wb, fileName);
+                    
+                    Utils.showSuccess('Xuất dữ liệu người dùng thành công!');
+                } catch (error) {
+                    console.error('Export error:', error);
+                    Utils.showError('Có lỗi xảy ra khi xuất dữ liệu Excel!');
+                }
+            }
+
+            // Helper functions for Excel export
+            calculateColumnWidths(data, maxWidth = 50) {
+                if (!data || data.length === 0) return [];
+                
+                const keys = Object.keys(data[0]);
+                const widths = keys.map(key => {
+                    // Calculate width based on header and data
+                    let maxLength = key.length;
+                    
+                    data.forEach(row => {
+                        const cellLength = String(row[key] || '').length;
+                        if (cellLength > maxLength) {
+                            maxLength = cellLength;
+                        }
+                    });
+                    
+                    // Limit max width and ensure minimum width
+                    return { wch: Math.min(Math.max(maxLength + 2, 10), maxWidth) };
+                });
+                
+                return widths;
+            }
+
+            sanitizeSheetName(name) {
+                // Remove invalid characters for sheet names
+                return name.replace(/[\\\/\*\?\[\]]/g, '_').substring(0, 31);
+            }
+
+            sanitizeFileName(name) {
+                // Remove invalid characters for file names
+                return name.replace(/[<>:"/\\|?*]/g, '_');
+            }
+
+            async loadUserDataOptions() {
+                // Load users for filter
+                const users = await authSystem.getUsers();
+                const userOptions = [
+                    { value: '', text: 'Tất cả người dùng' },
+                    ...users.map(user => ({ 
+                        value: user.email, 
+                        text: `${user.name} (${user.email})` 
+                    }))
+                ];
+
+                this.populateCustomSelect('userDataUserSelectContainer', userOptions);
+
+                // Load fields for filter  
+                const fields = await authSystem.getAllFieldsForAdmin();
+                const fieldOptions = [
+                    { value: '', text: 'Tất cả trường' },
+                    ...fields.map(field => ({ 
+                        value: field.id, 
+                        text: field.name 
+                    }))
+                ];
+
+                this.populateCustomSelect('userDataFieldSelectContainer', fieldOptions);
+
+                // Load initial data
+                await this.loadUserData();
+            }
+
+            async loadUserData() {
+                const userFilter = this.getCustomSelectValue('userDataUserSelectContainer');
+                const fieldFilter = this.getCustomSelectValue('userDataFieldSelectContainer');
+                
+                const fields = await authSystem.getAllFieldsForAdmin();
+                const users = await authSystem.getUsers();
+                
+                let allUserData = [];
+                let todayData = 0;
+                let contributingUsers = new Set();
+                let totalContributors = new Set(); // New: track all contributors ever
+                const today = new Date().toDateString();
+
+                // Collect all user-submitted data
+                fields.forEach(field => {
+                    if (fieldFilter && field.id !== fieldFilter) return;
+                    
+                    (field.data || []).forEach(item => {
+                        // Skip admin-added data  
+                        if (item.addedBy === 'letoan242' || item.addedBy === 'trinhhanh261293@gmail.com') return;
+                        
+                        // Add to total contributors regardless of current filter
+                        totalContributors.add(item.addedBy);
+                        
+                        if (userFilter && item.addedBy !== userFilter) return;
+                        
+                        // Find user info
+                        const user = users.find(u => u.email === item.addedBy);
+                        
+                        allUserData.push({
+                            ...item,
+                            fieldName: field.name,
+                            fieldId: field.id,
+                            userName: user ? (user.username || user.name) : 'Unknown User'
+                        });
+                        
+                        contributingUsers.add(item.addedBy);
+                        
+                        if (new Date(item.addedAt).toDateString() === today) {
+                            todayData++;
+                        }
+                    });
+                });
+
+                // Sort by date (newest first)
+                allUserData.sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt));
+
+                // Update statistics
+                Utils.animateNumber(document.getElementById('userDataTotal'), 0, allUserData.length);
+                Utils.animateNumber(document.getElementById('userDataToday'), 0, todayData);
+                Utils.animateNumber(document.getElementById('userDataUsers'), 0, contributingUsers.size);
+                Utils.animateNumber(document.getElementById('userDataContributors'), 0, totalContributors.size);
+
+                // Display table
+                const container = document.getElementById('userDataTableContainer');
+                
+                if (allUserData.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">Không có dữ liệu nào.</p>';
+                    return;
+                }
+
+                const columns = [
+                    { key: 'userName', title: 'Người dùng' },
+                    { key: 'fieldName', title: 'Trường' },
+                    { key: 'value', title: 'Dữ liệu' },
+                    { key: 'addedAt', title: 'Ngày thêm', type: 'date' }
+                ];
+
+                const options = {
+                    actions: (data) => `
+                        <button class="btn btn-danger" onclick="adminPanel.removeUserData('${data.fieldId}', '${data.id}')" style="padding: 5px 10px;">🗑️</button>
+                    `,
+                    pagination: true,
+                    itemsPerPage: 10
+                };
+
+                const table = Utils.createTable(allUserData, columns, options);
+                container.innerHTML = '<h3>Dữ liệu được thêm bởi người dùng:</h3>';
+                container.appendChild(table);
+            }
+
+            async removeUserData(fieldId, dataId) {
+                const confirmed = await Utils.confirmDialog('Bạn có chắc chắn muốn xóa dữ liệu này?', 'small');
+                if (!confirmed) return;
+
+                const result = await authSystem.removeDataFromField(fieldId, dataId);
+                if (result.success) {
+                    Utils.showSuccess('Xóa dữ liệu thành công!');
+                    await this.loadUserData();
+                    await this.loadStatistics();
+                } else {
+                    Utils.showError(result.message);
+                }
+            }
+
+            updateUI() {
+                const user = authSystem.getCurrentUser();
+                if (user) {
+                    document.getElementById('userInfo').textContent = `👋 ${user.name}`;
+                }
+            }
+        }
+
+        // Make AdminPanel globally available
+        window.AdminPanel = AdminPanel;
+
+        // Initialize admin panel
+        let adminPanel;
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Wait for auth system to be ready
+            let attempts = 0;
+            while (!window.authSystem && attempts < 100) {
+                await new Promise(resolve => setTimeout(resolve, 50));
+                attempts++;
+            }
+            
+            adminPanel = new AdminPanel();
+            window.adminPanel = adminPanel;
+        });
+    </script>
+
+    <style>
+        .tab-navigation {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            border: none;
+            background: rgba(255, 179, 128, 0.2);
+            color: #ff6b35;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active,
+        .tab-btn:hover {
+            background: linear-gradient(135deg, #ff6b35 0%, #ff9a56 100%);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        /* Field-specific error messages */
+        .field-error {
+            color: #d32f2f;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+            min-height: 16px;
+        }
+
+        /* User item styling for field assignment */
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            margin-bottom: 5px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 5px;
+            border: 1px solid #eee;
+        }
+
+        .user-item:hover {
+            background: rgba(255, 179, 128, 0.1);
+        }
+
+        .user-item span {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .tab-navigation {
+                flex-direction: column;
+            }
+            
+            .card-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .stats {
+                flex-direction: column;
+            }
+        }
+    </style>
+</body>
+</html> 

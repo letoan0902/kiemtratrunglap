@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - Hệ thống Kiểm tra Trùng lặp</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card slide-up">
+            <h1>Đăng nhập</h1>
+            <p style="text-align: center; color: #666; margin-bottom: 30px;">
+                Vui lòng đăng nhập để sử dụng hệ thống
+            </p>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email hoặc Tên đăng nhập</label>
+                    <input type="text" id="email" class="form-input" placeholder="Nhập email hoặc tên đăng nhập" required>
+                    <small style="color: #666; font-size: 12px;">💡 Bạn có thể đăng nhập bằng email hoặc tên đăng nhập</small>
+                    <div class="error-message" id="emailError"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Mật khẩu</label>
+                    <input type="password" id="password" class="form-input" placeholder="Nhập mật khẩu" required>
+                    <div class="error-message" id="passwordError"></div>
+                </div>
+                
+                <button type="submit" id="loginBtn" class="btn btn-primary btn-full">
+                    Đăng nhập
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div id="loadingModal" class="loading-modal">
+        <div class="loading-modal-content">
+            <div class="loading-spinner"></div>
+            <p id="loadingText">Đang đăng nhập...</p>
+        </div>
+    </div>
+
+    <!-- Application Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/config.js"></script>
+    <script type="module">
+        // Import Firebase and auth system
+        import { authSystem } from './js/auth.js';
+
+        // Make it globally available
+        window.authSystem = authSystem;
+
+        // Clear error messages
+        function clearErrors() {
+            document.getElementById('emailError').textContent = '';
+            document.getElementById('passwordError').textContent = '';
+        }
+
+        // Show error under specific input
+        function showFieldError(fieldId, message) {
+            const errorElement = document.getElementById(fieldId + 'Error');
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
+        }
+
+        // Show loading modal
+        function showLoadingModal(text = 'Đang xử lý...') {
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('loadingModal').style.display = 'flex';
+        }
+
+        // Hide loading modal
+        function hideLoadingModal() {
+            document.getElementById('loadingModal').style.display = 'none';
+        }
+
+        // Wait for auth system to be ready
+        async function waitForAuthSystem() {
+            let attempts = 0;
+            while (!window.authSystem && attempts < 100) {
+                await new Promise(resolve => setTimeout(resolve, 50));
+                attempts++;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Wait for auth system to be ready
+            await waitForAuthSystem();
+
+            const loginForm = document.getElementById('loginForm');
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+
+            // Check if user is already logged in
+            if (authSystem.isLoggedIn()) {
+                authSystem.redirectToAppropriatePanel();
+                return;
+            }
+
+            // Handle form submission
+            loginForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                clearErrors();
+                
+                const email = emailInput.value.trim();
+                const password = passwordInput.value.trim();
+
+                // Client-side validation
+                let hasErrors = false;
+
+                if (!email) {
+                    showFieldError('email', 'Vui lòng nhập email hoặc tên đăng nhập');
+                    hasErrors = true;
+                }
+
+                if (!password) {
+                    showFieldError('password', 'Vui lòng nhập mật khẩu');
+                    hasErrors = true;
+                }
+
+                if (hasErrors) return;
+
+                showLoadingModal('Đang xác thực tài khoản...');
+
+                try {
+                    const result = await authSystem.login(email, password);
+                    
+                    if (result.success) {
+                        showLoadingModal('Đăng nhập thành công! Đang chuyển hướng...');
+                        
+                        // Reduce redirect delay from 1500ms to 500ms
+                        setTimeout(() => {
+                            hideLoadingModal();
+                            authSystem.redirectToAppropriatePanel();
+                        }, 500);
+                    } else {
+                        hideLoadingModal();
+                        
+                        // Show specific field errors
+                        if (result.field === 'email') {
+                            showFieldError('email', result.message);
+                        } else if (result.field === 'password') {
+                            showFieldError('password', result.message);
+                        } else {
+                            showFieldError('email', result.message);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Login error:', error);
+                    hideLoadingModal();
+                    showFieldError('email', 'Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại!');
+                }
+            });
+
+            // Clear errors when user starts typing
+            emailInput.addEventListener('input', () => {
+                document.getElementById('emailError').textContent = '';
+            });
+
+            passwordInput.addEventListener('input', () => {
+                document.getElementById('passwordError').textContent = '';
+            });
+
+            // Add enter key handling
+            emailInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    passwordInput.focus();
+                }
+            });
+
+            passwordInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    loginForm.dispatchEvent(new Event('submit'));
+                }
+            });
+
+            // Auto focus on email input
+            emailInput.focus();
+        });
+    </script>
+
+    <style>
+        /* Error Messages */
+        .error-message {
+            color: #d32f2f;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+            min-height: 16px;
+        }
+
+        .form-input.error {
+            border-color: #f44336;
+            box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.1);
+        }
+
+        /* Loading Modal */
+        .loading-modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            min-width: 300px;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #ff6b35;
+            border-radius: 50%;
+            animation: spin 0.5s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #loadingText {
+            color: #666;
+            font-weight: 500;
+            margin: 0;
+        }
+    </style>
+</body>
+</html>
