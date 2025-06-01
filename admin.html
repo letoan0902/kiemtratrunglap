@@ -1098,10 +1098,6 @@
                     await this.saveFieldAssignments(modal);
                 });
 
-                // Prevent modal from closing when clicking overlay - user must use close buttons only
-                modal.querySelector('.modal-content').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                });
             }
 
             renderUserList(users, userIds, type, fieldId) {
@@ -1322,7 +1318,7 @@
                         <form id="createUserForm" autocomplete="off">
                             <div class="form-group">
                                 <label for="userUsername">Tên đăng nhập</label>
-                                <input type="text" id="userUsername" name="new-username" class="form-input" placeholder="Nhập tên đăng nhập" required autocomplete="new-password" data-lpignore="true" data-form-type="other">
+                                <input type="text" id="userUsername" name="new-username" class="form-input" placeholder="Nhập tên đăng nhập"  autocomplete="new-password" data-lpignore="true" data-form-type="other">
                                 <div class="field-error" id="usernameError"></div>
                             </div>
                             
@@ -1347,10 +1343,6 @@
                     closable: true
                 });
 
-                // Prevent modal from closing when clicking overlay - user must use close buttons only
-                modal.querySelector('.modal-content').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                });
 
                 // Add form submission handler
                 document.getElementById('createUserForm').addEventListener('submit', async (e) => {
@@ -1484,7 +1476,8 @@
                         </div>
                     `,
                     size: 'small',
-                    closable: true
+                    closable: true,
+                    allowOverlayClose: true
                 });
             }
 
@@ -1517,10 +1510,7 @@
                     closable: true
                 });
 
-                // Prevent modal from closing when clicking overlay - user must use close buttons only
-                modal.querySelector('.modal-content').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                });
+
 
                 // Add form submission handler
                 document.getElementById('addFieldForm').addEventListener('submit', async (e) => {
@@ -1660,10 +1650,7 @@
                     closable: true
                 });
 
-                // Prevent modal from closing when clicking overlay - user must use close buttons only
-                modal.querySelector('.modal-content').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                });
+
 
                 // Add form submission handler
                 document.getElementById('editUserForm').addEventListener('submit', async (e) => {
@@ -1764,10 +1751,7 @@
                     closable: true
                 });
 
-                // Prevent modal from closing when clicking overlay - user must use close buttons only
-                modal.querySelector('.modal-content').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                });
+
 
                 // Add form submission handler
                 document.getElementById('editFieldForm').addEventListener('submit', async (e) => {

@@ -1,4 +1,4 @@
-// High-Performance Firebase Configuration Manager
+// Trình quản lý cấu hình Firebase hiệu suất cao
 class FirebaseConfigManager {
   constructor() {
     this.config = null;
@@ -8,19 +8,19 @@ class FirebaseConfigManager {
     this.lastSecurityCheck = 0;
   }
 
-  // Fast cached config loader
+  // Trình tải cấu hình cache nhanh
   async getConfig() {
     if (this.config) return this.config;
 
-    // Use cached config if available
+    // Sử dụng cấu hình cache nếu có
     const cached = this.cache.get("firebase_config");
     if (cached && Date.now() - cached.timestamp < 300000) {
-      // 5 minute cache
+      // Cache 5 phút
       this.config = cached.data;
       return this.config;
     }
 
-    // Decode configuration (optimized)
+    // Giải mã cấu hình (tối ưu hóa)
     const encoded = [
       "QUl6YVN5Q1FuMXBiaGNIblk4OXg0X0ZlV3NhS3E0dkQxcW5pcTF3", // apiKey
       "bGV0b2FuY2hlY2tkdXBsaWNhdGVzLmZpcmViYXNlYXBwLmNvbQ==", // authDomain
@@ -32,7 +32,7 @@ class FirebaseConfigManager {
       "Ry04WFJLRURUMzZS", // measurementId
     ];
 
-    // Pre-decode all at once (faster)
+    // Giải mã tất cả cùng lúc (nhanh hơn)
     this.config = {
       apiKey: atob(encoded[0]),
       authDomain: atob(encoded[1]),
@@ -44,7 +44,7 @@ class FirebaseConfigManager {
       measurementId: atob(encoded[7]),
     };
 
-    // Cache the config
+    // Lưu cache cấu hình
     this.cache.set("firebase_config", {
       data: this.config,
       timestamp: Date.now(),
@@ -54,25 +54,25 @@ class FirebaseConfigManager {
     return this.config;
   }
 
-  // Optimized security checks - run less frequently
+  // Kiểm tra bảo mật tối ưu - chạy ít thường xuyên hơn
   async performSecurityChecks() {
     const now = Date.now();
 
-    // Skip if checked recently (within 30 seconds)
+    // Bỏ qua nếu đã kiểm tra gần đây (trong vòng 30 giây)
     if (this.securityChecked && now - this.lastSecurityCheck < 30000) {
       return true;
     }
 
-    // Fast domain validation (most important)
+    // Xác thực domain nhanh (quan trọng nhất)
     if (!this.isValidDomain()) {
-      throw new Error("Application not authorized for this domain");
+      throw new Error("Ứng dụng không được phép trên domain này");
     }
 
-    // Set flags to avoid repeated checks
+    // Đặt cờ để tránh kiểm tra lặp lại
     this.securityChecked = true;
     this.lastSecurityCheck = now;
 
-    // Schedule other checks asynchronously (non-blocking)
+    // Lên lịch kiểm tra khác không đồng bộ (không chặn)
     setTimeout(() => {
       this.performBackgroundSecurityChecks();
     }, 0);
@@ -80,25 +80,25 @@ class FirebaseConfigManager {
     return true;
   }
 
-  // Background security checks (non-blocking)
+  // Kiểm tra bảo mật nền (không chặn)
   performBackgroundSecurityChecks() {
     try {
-      // Check for developer tools (background) - DISABLED to prevent blocking
+      // Kiểm tra công cụ phát triển (nền) - TẮT để tránh chặn
       // if (this.isDevToolsOpen()) {
-      //   console.warn("Developer tools detected");
+      //   console.warn("Phát hiện công cụ phát triển");
       // }
 
-      // Check referrer (background)
+      // Kiểm tra referrer (nền)
       if (!this.isValidReferrer()) {
-        console.debug("Invalid referrer detected"); // Changed to debug
+        console.debug("Phát hiện referrer không hợp lệ"); // Chuyển thành debug
       }
     } catch (error) {
-      // Silent fail for background checks
-      console.debug("Background security check:", error);
+      // Thất bại thầm lặng cho kiểm tra nền
+      console.debug("Kiểm tra bảo mật nền:", error);
     }
   }
 
-  // Optimized dev tools detection
+  // Phát hiện công cụ phát triển tối ưu
   isDevToolsOpen() {
     const threshold = 160;
     return (
@@ -107,7 +107,7 @@ class FirebaseConfigManager {
     );
   }
 
-  // Cached referrer validation
+  // Xác thực referrer có cache
   isValidReferrer() {
     if (!this.cache.has("referrer_valid")) {
       const allowedReferrers = [
@@ -119,7 +119,7 @@ class FirebaseConfigManager {
       const hostname = window.location.hostname;
       const isValid = allowedReferrers.some((ref) => hostname.includes(ref));
 
-      // Cache result for 5 minutes
+      // Lưu cache kết quả trong 5 phút
       this.cache.set("referrer_valid", {
         data: isValid,
         timestamp: Date.now(),
@@ -130,16 +130,16 @@ class FirebaseConfigManager {
 
     const cached = this.cache.get("referrer_valid");
     if (Date.now() - cached.timestamp < 300000) {
-      // 5 minutes
+      // 5 phút
       return cached.data;
     }
 
-    // Re-validate if cache expired
+    // Xác thực lại nếu cache hết hạn
     this.cache.delete("referrer_valid");
     return this.isValidReferrer();
   }
 
-  // Fast domain validation
+  // Xác thực domain nhanh
   isValidDomain() {
     const allowedDomains = ["localhost", "127.0.0.1", "letoan0902.github.io"];
 
@@ -147,21 +147,21 @@ class FirebaseConfigManager {
   }
 }
 
-// Optimized Rate limiting class
+// Lớp giới hạn tốc độ tối ưu
 class RateLimiter {
   constructor() {
     this.requests = new Map();
-    this.maxRequests = 200; // Increased limit for better UX
-    this.windowMs = 60000; // 1 minute window
+    this.maxRequests = 200; // Tăng giới hạn để UX tốt hơn
+    this.windowMs = 60000; // Cửa sổ 1 phút
     this.cleanupInterval = null;
     this.startCleanup();
   }
 
-  // Background cleanup to prevent memory leaks
+  // Dọn dẹp nền để tránh rò rỉ bộ nhớ
   startCleanup() {
     this.cleanupInterval = setInterval(() => {
       this.cleanup();
-    }, 30000); // Cleanup every 30 seconds
+    }, 30000); // Dọn dẹp mỗi 30 giây
   }
 
   cleanup() {
@@ -190,7 +190,7 @@ class RateLimiter {
 
     const requests = this.requests.get(identifier);
 
-    // Quick check without full cleanup
+    // Kiểm tra nhanh mà không cần dọn dẹp đầy đủ
     const recentCount = requests.reduce((count, time) => {
       return time > windowStart ? count + 1 : count;
     }, 0);
@@ -199,10 +199,10 @@ class RateLimiter {
       return false;
     }
 
-    // Add current request
+    // Thêm yêu cầu hiện tại
     requests.push(now);
 
-    // Lazy cleanup - only clean if array gets too large
+    // Dọn dẹp lười - chỉ dọn nếu mảng quá lớn
     if (requests.length > this.maxRequests * 2) {
       const validRequests = requests.filter((time) => time > windowStart);
       this.requests.set(identifier, validRequests);
@@ -218,16 +218,16 @@ class RateLimiter {
   }
 }
 
-// Initialize instances with performance monitoring
+// Khởi tạo instances với theo dõi hiệu suất
 const configManager = new FirebaseConfigManager();
 const rateLimiter = new RateLimiter();
 
-// Performance tracking
+// Theo dõi hiệu suất
 window.addEventListener("beforeunload", () => {
   rateLimiter.destroy();
 });
 
-// Export for use
+// Xuất để sử dụng
 window.FirebaseConfigManager = configManager;
 window.RateLimiter = rateLimiter;
 

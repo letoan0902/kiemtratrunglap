@@ -1,4 +1,4 @@
-// Utility functions for the application
+// Các hàm tiện ích cho ứng dụng
 class Utils {
   static showMessage(message, type = "info", duration = 3000) {
     const existingMessage = document.querySelector(".message");
@@ -10,7 +10,7 @@ class Utils {
     messageDiv.className = `message ${type} fade-in`;
     messageDiv.textContent = message;
 
-    // Insert at the beginning of the body or after nav
+    // Chèn vào đầu body hoặc sau nav
     const nav = document.querySelector(".nav");
     if (nav) {
       nav.insertAdjacentElement("afterend", messageDiv);
@@ -18,7 +18,7 @@ class Utils {
       document.body.insertBefore(messageDiv, document.body.firstChild);
     }
 
-    // Auto remove after duration
+    // Tự động xóa sau khoảng thời gian
     setTimeout(() => {
       if (messageDiv.parentNode) {
         messageDiv.style.animation = "fadeOut 0.3s ease-out";
@@ -151,6 +151,7 @@ class Utils {
         `,
         size: size,
         closable: true,
+        allowOverlayClose: true,
       });
 
       // Set default result to false when modal is closed via X button
@@ -171,7 +172,13 @@ class Utils {
     });
   }
 
-  static createModal({ title, content, size = "medium", closable = true }) {
+  static createModal({
+    title,
+    content,
+    size = "medium",
+    closable = true,
+    allowOverlayClose = false,
+  }) {
     // Create modal overlay
     const modal = document.createElement("div");
     modal.className = "modal";
@@ -198,8 +205,8 @@ class Utils {
       </div>
     `;
 
-    // Add click outside to close (only if closable)
-    if (closable) {
+    // Add click outside to close (only if allowOverlayClose is true)
+    if (allowOverlayClose) {
       modal.addEventListener("click", (e) => {
         if (e.target === modal) {
           modal.style.display = "none";
