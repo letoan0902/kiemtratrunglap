@@ -590,7 +590,6 @@ h3 {
 
   .nav-content {
     flex-direction: column;
-    gap: 15px;
   }
 
   .nav-links {
@@ -1535,10 +1534,11 @@ h3 {
 
 /* Navigation Logo Styles */
 .nav-logo {
-  width: 96px;
-  height: 96px;
+  width: 50px;
+  height: 50px;
   object-fit: contain;
   border-radius: 4px;
+  margin-bottom: 10px;
 }
 
 /* Responsive Design for Logo */
@@ -1565,8 +1565,8 @@ h3 {
   }
 
   .nav-logo {
-    width: 84px;
-    height: 84px;
+    width: 50px;
+    height: 50px;
   }
 
   .nav-brand {
