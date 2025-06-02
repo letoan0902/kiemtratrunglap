@@ -149,16 +149,55 @@ class AuthSystem {
       if (savedUser) {
         try {
           this.currentUser = JSON.parse(savedUser);
+          console.log("Tìm thấy user đã lưu:", {
+            email: this.currentUser.email,
+            role: this.currentUser.role,
+            currentPage: window.location.pathname,
+          });
 
           // Xác minh người dùng không đồng bộ (không chặn UI)
-          this.verifyUserExists(this.currentUser.email).then((exists) => {
-            if (!exists) {
-              this.logout();
-            } else {
-              this.redirectToAppropriatePanel();
+          // Thêm delay để tránh loop redirect
+          setTimeout(async () => {
+            try {
+              const exists = await this.verifyUserExists(
+                this.currentUser.email
+              );
+              console.log("Kết quả xác minh user:", {
+                email: this.currentUser.email,
+                exists: exists,
+              });
+
+              if (!exists) {
+                console.log("Xác minh user thất bại - đăng xuất");
+                this.logout();
+              } else {
+                console.log("Xác minh user thành công - kiểm tra trang");
+
+                // Chỉ redirect nếu đang ở trang sai
+                const currentPage = window.location.pathname.split("/").pop();
+                const expectedPage =
+                  this.currentUser.role === "admin"
+                    ? "admin.html"
+                    : "user.html";
+
+                if (
+                  currentPage !== expectedPage &&
+                  currentPage !== "index.html"
+                ) {
+                  console.log("Redirect đến panel phù hợp:", {
+                    currentPage: currentPage,
+                    expectedPage: expectedPage,
+                  });
+                  this.redirectToAppropriatePanel();
+                }
+              }
+            } catch (error) {
+              console.error("Lỗi trong quá trình xác minh user:", error);
+              // Không logout nếu có lỗi network, chỉ log
             }
-          });
+          }, 1000); // Delay 1 giây để tránh redirect ngay lập tức
         } catch (e) {
+          console.log("Dữ liệu session không hợp lệ, đang xóa:", e);
           // Dữ liệu session không hợp lệ
           sessionStorage.removeItem("currentUser");
         }
@@ -236,7 +275,7 @@ class AuthSystem {
   }
 
   handleInitializationError(error) {
-    // Lightweight error UI
+    // UI báo lỗi nhẹ
     document.body.innerHTML = `
       <div style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:Arial,sans-serif;background:#fff8e1;">
         <div style="text-align:center;padding:40px;background:white;border-radius:20px;box-shadow:0 15px 35px rgba(0,0,0,0.1);max-width:400px;">
@@ -249,11 +288,13 @@ class AuthSystem {
 
   async verifyUserExists(email) {
     try {
+      console.log("verifyUserExists được gọi với email:", email);
+
       // Kiểm tra cache trước
       const cacheKey = `user_exists_${email}`;
       const cached = this.cache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < 60000) {
-        // Cache 1 phút
+        console.log("verifyUserExists - sử dụng cache:", cached.data);
         return cached.data;
       }
 
@@ -264,19 +305,150 @@ class AuthSystem {
 
       // Chuẩn hóa email
       const normalizedEmail = email.trim().toLowerCase();
-      const userDoc = await getDoc(doc(this.db, "users", normalizedEmail));
-      const exists = userDoc.exists() && userDoc.data().isActive;
+
+      // Thực hiện tìm kiếm thực sự qua tất cả users vì document ID là username, không phải email
+      const allUsersSnapshot = await getDocs(collection(this.db, "users"));
+      let userExists = false;
+      let foundUserData = null;
+
+      allUsersSnapshot.forEach((doc) => {
+        const userData = doc.data();
+        const userEmail = userData.email?.toLowerCase() || "";
+
+        // Kiểm tra email khớp và user còn active và không bị khóa
+        if (userEmail === normalizedEmail && userData.isActive) {
+          // Kiểm tra status - nếu có field status và bằng false thì coi như không tồn tại
+          if (userData.hasOwnProperty("status") && userData.status === false) {
+            console.log("User tồn tại nhưng bị khóa:", {
+              email: normalizedEmail,
+              userId: doc.id,
+              status: userData.status,
+            });
+            userExists = false; // User bị khóa
+          } else {
+            console.log("User tồn tại và active:", {
+              email: normalizedEmail,
+              userId: doc.id,
+              status: userData.status || "không có field status",
+            });
+            userExists = true;
+            foundUserData = userData;
+          }
+        }
+      });
+
+      console.log("Kết quả verifyUserExists:", {
+        email: normalizedEmail,
+        exists: userExists,
+        foundUser: foundUserData
+          ? {
+              email: foundUserData.email,
+              username: foundUserData.username,
+              status: foundUserData.status,
+            }
+          : null,
+      });
 
       // Lưu cache kết quả
       this.cache.set(cacheKey, {
-        data: exists,
+        data: userExists,
         timestamp: Date.now(),
       });
 
-      return exists;
+      return userExists;
     } catch (error) {
       console.error("Lỗi khi xác minh người dùng:", error);
       return false;
+    }
+  }
+
+  // Hàm kiểm tra user có tồn tại và trả về thông tin user (cho forgot password)
+  async checkUserExists(emailOrUsername) {
+    try {
+      // Đợi khởi tạo nếu cần
+      if (!this.initialized) {
+        await this.initPromise;
+      }
+
+      // Chuẩn hóa đầu vào
+      const normalizedInput = emailOrUsername.trim().toLowerCase();
+
+      // Đầu tiên thử tìm username trực tiếp
+      let userDoc = await getDoc(doc(this.db, "users", normalizedInput));
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (userData.isActive) {
+          return {
+            id: normalizedInput,
+            email: userData.email,
+            username: userData.username,
+            name: userData.name,
+          };
+        }
+      }
+
+      // Nếu không tìm thấy, tìm kiếm bằng email
+      const allUsersSnapshot = await getDocs(collection(this.db, "users"));
+      let foundUser = null;
+
+      allUsersSnapshot.forEach((doc) => {
+        const data = doc.data();
+        const userEmail = data.email?.toLowerCase() || "";
+        const userName = data.username?.toLowerCase() || "";
+
+        // Kiểm tra xem đầu vào có khớp với email hoặc username
+        if (userEmail === normalizedInput || userName === normalizedInput) {
+          foundUser = { id: doc.id, ...data };
+        }
+      });
+
+      return foundUser;
+    } catch (error) {
+      console.error("Lỗi khi kiểm tra user tồn tại:", error);
+      return false;
+    }
+  }
+
+  // Hàm reset mật khẩu user (cho forgot password)
+  async resetUserPassword(userId, newPassword) {
+    try {
+      // Đợi khởi tạo nếu cần
+      if (!this.initialized) {
+        await this.initPromise;
+      }
+
+      // Validate password
+      if (!newPassword || newPassword.length < 6) {
+        return {
+          success: false,
+          message: "Mật khẩu phải có ít nhất 6 ký tự",
+        };
+      }
+
+      // Cập nhật mật khẩu trong Firestore
+      await updateDoc(doc(this.db, "users", userId), {
+        password: newPassword,
+        passwordUpdatedAt: serverTimestamp(),
+        passwordUpdatedBy: "password_reset",
+      });
+
+      // Log hoạt động bảo mật
+      this.securityMonitor.logActivity("password_reset", {
+        userId: userId,
+        timestamp: new Date().toISOString(),
+      });
+
+      return {
+        success: true,
+        message: "Mật khẩu đã được cập nhật thành công",
+      };
+    } catch (error) {
+      console.error("Lỗi khi reset mật khẩu:", error);
+      return {
+        success: false,
+        message: "Có lỗi xảy ra khi cập nhật mật khẩu. Vui lòng thử lại!",
+      };
     }
   }
 
@@ -387,22 +559,41 @@ class AuthSystem {
         };
       }
 
-      // Kiểm tra trạng thái khóa của user
-      if (foundUserData.status === false) {
+      // Kiểm tra trạng thái khóa của user - chỉ khi status field tồn tại
+      if (
+        foundUserData.hasOwnProperty("status") &&
+        foundUserData.status === false
+      ) {
         this.securityMonitor.recordFailedAttempt(clientId);
         this.securityMonitor.logActivity("login_failed", {
           reason: "account_locked",
           email: foundUserData.email,
+          userId: finalUserId,
+          status: foundUserData.status,
           clientId,
+        });
+        console.log("Đăng nhập user bị chặn - tài khoản bị khóa:", {
+          userId: finalUserId,
+          email: foundUserData.email,
+          status: foundUserData.status,
         });
         return {
           success: false,
           message:
-            "Bạn đã bị khóa, vui lòng liên lạc người quản lý để biết thêm chi tiết",
+            "Tài khoản bị khóa, vui lòng liên hệ quản trị viên để biết thêm chi tiết",
           field: "email",
           isLocked: true,
         };
       }
+
+      // Log status check để debug
+      console.log("Kiểm tra trạng thái user:", {
+        userId: finalUserId,
+        email: foundUserData.email,
+        hasStatusField: foundUserData.hasOwnProperty("status"),
+        status: foundUserData.status,
+        isActive: foundUserData.isActive,
+      });
 
       if (foundUserData.password !== password) {
         this.securityMonitor.recordFailedAttempt(clientId);
@@ -493,7 +684,7 @@ class AuthSystem {
     sessionStorage.removeItem("currentUser");
     sessionStorage.removeItem("clientId");
 
-    // Clear all localStorage data including auto-save data
+    // Xóa tất cả dữ liệu localStorage bao gồm remember login và auto-save data
     try {
       const keysToRemove = [];
       for (let i = 0; i < localStorage.length; i++) {
@@ -502,7 +693,8 @@ class AuthSystem {
           key &&
           (key.startsWith("app_") ||
             key.startsWith("auth_") ||
-            key.startsWith("user_"))
+            key.startsWith("user_") ||
+            key === "remember_login")
         ) {
           keysToRemove.push(key);
         }
@@ -512,9 +704,9 @@ class AuthSystem {
         localStorage.removeItem(key);
       });
 
-      console.log("Cleared localStorage on logout:", keysToRemove);
+      console.log("Đã xóa localStorage khi đăng xuất:", keysToRemove);
     } catch (error) {
-      console.warn("Failed to clear localStorage on logout:", error);
+      console.warn("Không thể xóa localStorage khi đăng xuất:", error);
     }
 
     window.location.href = "index.html";
@@ -572,6 +764,9 @@ class AuthSystem {
     try {
       await this.waitForInitialization();
 
+      // Xóa cache để đảm bảo lấy dữ liệu mới nhất
+      this.cache.clear();
+
       // Loại bỏ orderBy để tránh yêu cầu index
       const q = query(
         collection(this.db, "users"),
@@ -583,6 +778,12 @@ class AuthSystem {
 
       querySnapshot.forEach((doc) => {
         const data = doc.data();
+
+        // Đảm bảo status field luôn có giá trị - mặc định là true (không bị khóa)
+        if (!data.hasOwnProperty("status")) {
+          data.status = true;
+        }
+
         users.push({
           id: doc.id,
           ...data,
@@ -595,6 +796,16 @@ class AuthSystem {
       // Sắp xếp trong JavaScript thay vì Firestore
       users.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
+      console.log(
+        "getUsers trả về:",
+        users.map((u) => ({
+          id: u.id,
+          email: u.email,
+          status: u.status,
+          hasStatusField: u.hasOwnProperty("status"),
+        }))
+      );
+
       return users;
     } catch (error) {
       console.error("Lỗi khi lấy danh sách người dùng:", error);
@@ -605,6 +816,11 @@ class AuthSystem {
         allUsersSnapshot.forEach((doc) => {
           const data = doc.data();
           if (data.role === "user") {
+            // Đảm bảo status field luôn có giá trị
+            if (!data.hasOwnProperty("status")) {
+              data.status = true;
+            }
+
             users.push({
               id: doc.id,
               ...data,
@@ -700,13 +916,18 @@ class AuthSystem {
         createdAt: serverTimestamp(),
         createdBy: this.currentUser.email,
         isActive: true,
-        status: true, // true = mở khóa, false = bị khóa
+        status: true, // true = không bị khóa, false = bị khóa
       };
 
       // Thao tác ghi đơn lẻ nhanh
       await setDoc(doc(this.db, "users", userId), newUser);
 
-      console.log("User created successfully:", userId);
+      console.log("User được tạo thành công với status true:", {
+        userId: userId,
+        email: email,
+        status: newUser.status,
+        isActive: newUser.isActive,
+      });
 
       return {
         success: true,
@@ -717,7 +938,7 @@ class AuthSystem {
         },
       };
     } catch (error) {
-      console.error("Error creating user:", error);
+      console.error("Lỗi tạo user:", error);
       return { success: false, message: "Có lỗi xảy ra khi tạo người dùng!" };
     }
   }
@@ -775,7 +996,7 @@ class AuthSystem {
         },
       };
     } catch (error) {
-      console.error("Error updating user:", error);
+      console.error("Lỗi cập nhật user:", error);
       return {
         success: false,
         message: "Có lỗi xảy ra khi cập nhật người dùng!",
@@ -787,35 +1008,97 @@ class AuthSystem {
     try {
       await this.waitForInitialization();
 
+      console.log("deleteUser được gọi với userId:", userId);
+
       // Lấy thông tin user hiện tại để kiểm tra status
       const userDoc = await getDoc(doc(this.db, "users", userId));
       if (!userDoc.exists()) {
+        console.log("Không tìm thấy user:", userId);
         return { success: false, message: "Không tìm thấy người dùng!" };
       }
 
       const userData = userDoc.data();
-      const newStatus = !userData.status; // Toggle status
+      console.log("Dữ liệu user hiện tại:", {
+        userId: userId,
+        hasStatus: userData.hasOwnProperty("status"),
+        currentStatus: userData.status,
+        email: userData.email,
+      });
+
+      // Nếu user chưa có field status, coi như đang mở (true) và cần set lại
+      let currentStatus = true; // Mặc định là không bị khóa
+      if (userData.hasOwnProperty("status")) {
+        currentStatus = userData.status;
+      } else {
+        console.log("User không có field status, đặt mặc định true");
+        // Cập nhật user với status mặc định trước
+        await updateDoc(doc(this.db, "users", userId), {
+          status: true,
+          updatedAt: serverTimestamp(),
+          updatedBy: this.currentUser.email,
+          statusAddedBy: "system_default",
+        });
+        currentStatus = true;
+      }
+
+      const newStatus = !currentStatus; // Toggle status
+
+      console.log("Thay đổi status:", {
+        currentStatus: currentStatus,
+        newStatus: newStatus,
+        action: newStatus ? "mở khóa" : "khóa",
+      });
 
       // Cập nhật status thay vì xóa
-      await updateDoc(doc(this.db, "users", userId), {
+      const updateData = {
         status: newStatus,
         updatedAt: serverTimestamp(),
         updatedBy: this.currentUser.email,
+        lockReason: newStatus ? null : "Khóa bởi quản trị viên",
+        lockedAt: newStatus ? null : serverTimestamp(),
+      };
+
+      console.log("Cập nhật user với dữ liệu:", updateData);
+
+      await updateDoc(doc(this.db, "users", userId), updateData);
+
+      console.log("Cập nhật user hoàn thành thành công");
+
+      // Log hoạt động bảo mật
+      this.securityMonitor.logActivity("user_status_changed", {
+        targetUserId: userId,
+        targetUserEmail: userData.email,
+        newStatus: newStatus,
+        changedBy: this.currentUser.email,
+        action: newStatus ? "mở khóa" : "khóa",
       });
 
       const action = newStatus ? "mở khóa" : "khóa";
-      return {
+      const result = {
         success: true,
-        message: `${action} người dùng thành công!`,
+        message: `Đã ${action} người dùng ${
+          userData.email || userData.username
+        } thành công!`,
         newStatus: newStatus,
+        userEmail: userData.email || userData.username,
+        action: action,
       };
+
+      console.log("Kết quả deleteUser:", result);
+      return result;
     } catch (error) {
       console.error("Lỗi khi thay đổi trạng thái người dùng:", error);
       return {
         success: false,
         message: "Có lỗi xảy ra khi thay đổi trạng thái người dùng!",
+        error: error.message,
       };
     }
+  }
+
+  // Function riêng để toggle user status với thông báo chi tiết
+  async toggleUserStatus(userId) {
+    return await this.deleteUser(userId); // Sử dụng lại logic deleteUser
   }
 
   // Quản lý trường - SỬA LỖI INDEX VÀ THÊM KIỂM SOÁT TRUY CẬP TRƯỜNG
@@ -903,7 +1186,7 @@ class AuthSystem {
     }
   }
 
-  // Get all fields for admin (bypass access control)
+  // Lấy tất cả fields cho admin (bỏ qua kiểm soát truy cập)
   async getAllFieldsForAdmin() {
     try {
       await this.waitForInitialization();
@@ -930,7 +1213,7 @@ class AuthSystem {
       fields.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       return fields;
     } catch (error) {
-      console.error("Error getting all fields for admin:", error);
+      console.error("Lỗi lấy tất cả fields cho admin:", error);
       return [];
     }
   }
@@ -939,7 +1222,7 @@ class AuthSystem {
     try {
       await this.waitForInitialization();
 
-      // Simplified check without complex query
+      // Kiểm tra đơn giản mà không cần query phức tạp
       const allFieldsSnapshot = await getDocs(collection(this.db, "fields"));
       let fieldExists = false;
 
@@ -975,7 +1258,7 @@ class AuthSystem {
         },
       };
     } catch (error) {
-      console.error("Error creating field:", error);
+      console.error("Lỗi tạo field:", error);
       return { success: false, message: "Có lỗi xảy ra khi tạo trường!" };
     }
   }

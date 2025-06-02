@@ -185,7 +185,6 @@ h3 {
   backdrop-filter: blur(10px);
   padding: 15px 0;
   margin-bottom: 20px;
-  border-radius: 15px;
   border: 1px solid rgba(255, 193, 7, 0.3);
 }
 
@@ -548,20 +547,27 @@ h3 {
   letter-spacing: 0.5px;
 }
 
+#fieldSelectContainer{
+    z-index: 1001;
+}
 /* Responsive Design */
 @media (max-width: 768px) {
   .container {
     padding: 10px;
   }
 
+  .nav {
+    padding: 0;
+    margin: 0;
+  }
   .auth-card {
     padding: 30px 20px;
     margin: 10px;
   }
 
   .dashboard-container {
-    padding: 20px 15px;
-    margin: 10px;
+    padding: 0px;
+    margin: 0;
   }
 
   .row {
@@ -1477,4 +1483,14 @@ h3 {
   .column-search-container {
     padding: 15px;
   }
+}
+
+.action-buttons{
+    display: flex;
+}
+
+.action-buttons .btn {
+    padding: 5px;
+    width: 50%;
+    min-width: 0px !important;
 }

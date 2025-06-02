@@ -138,37 +138,67 @@ class Utils {
 
   static async confirmDialog(message, size = "medium") {
     return new Promise((resolve) => {
+      const modalId = `modal-${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2, 7)}`;
       const modal = this.createModal({
         title: "Xác nhận",
         content: `
           <div class="confirm-modal">
             <p class="message">${message}</p>
             <div class="btn-group">
-              <button class="btn btn-secondary" onclick="this.confirmResult = false; this.closest('.modal').style.display='none'; document.body.removeChild(this.closest('.modal'));">Hủy</button>
-              <button class="btn btn-danger" onclick="this.confirmResult = true; this.closest('.modal').style.display='none'; document.body.removeChild(this.closest('.modal'));">Xác nhận</button>
+              <button id="confirmBtnCancel-${modalId}" class="btn btn-secondary">Hủy</button>
+              <button id="confirmBtnOk-${modalId}" class="btn btn-danger">Xác nhận</button>
             </div>
           </div>
         `,
         size: size,
         closable: true,
         allowOverlayClose: true,
+        modalId: modalId,
       });
 
-      // Set default result to false when modal is closed via X button
-      modal.confirmResult = false;
+      const confirmBtnOk = document.getElementById(`confirmBtnOk-${modalId}`);
+      const confirmBtnCancel = document.getElementById(
+        `confirmBtnCancel-${modalId}`
+      );
+      const closeButton = modal.querySelector(".modal-close");
 
-      // Wait for user action
-      const checkResult = () => {
-        if (modal.confirmResult !== undefined) {
-          const result = modal.confirmResult;
-          resolve(result);
-        } else if (document.body.contains(modal)) {
-          setTimeout(checkResult, 100);
-        } else {
-          resolve(false);
+      const handleResolve = (value) => {
+        confirmBtnOk.removeEventListener("click", okListener);
+        confirmBtnCancel.removeEventListener("click", cancelListener);
+        if (closeButton) {
+          closeButton.removeEventListener("click", closeListener);
+        }
+        modal.removeEventListener("click", overlayListener);
+
+        if (modal.parentNode) {
+          modal.parentNode.removeChild(modal);
+        }
+        resolve(value);
+      };
+
+      const okListener = () => handleResolve(true);
+      const cancelListener = () => handleResolve(false);
+      const closeListener = () => handleResolve(false);
+      const overlayListener = (e) => {
+        if (e.target === modal) {
+          handleResolve(false);
         }
       };
-      checkResult();
+
+      confirmBtnOk.addEventListener("click", okListener);
+      confirmBtnCancel.addEventListener("click", cancelListener);
+
+      if (closeButton) {
+        const newCloseButton = closeButton.cloneNode(true);
+        closeButton.parentNode.replaceChild(newCloseButton, closeButton);
+        newCloseButton.addEventListener("click", closeListener);
+      }
+
+      modal.removeEventListener("click", modal.overlayClickListener);
+      modal.addEventListener("click", overlayListener);
+      modal.overlayClickListener = overlayListener;
     });
   }
 
@@ -178,26 +208,30 @@ class Utils {
     size = "medium",
     closable = true,
     allowOverlayClose = false,
+    modalId,
   }) {
-    // Create modal overlay
+    const currentModalId =
+      modalId ||
+      `modal-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+
     const modal = document.createElement("div");
     modal.className = "modal";
+    modal.id = currentModalId;
 
-    // Determine modal size
     let modalClass = "modal-content";
     if (size === "small") modalClass += " modal-small";
     else if (size === "large") modalClass += " modal-large";
     else if (size === "auto") modalClass += " modal-auto";
 
+    const closeButtonHtml = closable
+      ? `<button class="modal-close" id="modalCloseBtn-${currentModalId}">×</button>`
+      : "";
+
     modal.innerHTML = `
       <div class="${modalClass}">
         <div class="modal-header">
           <h3 class="modal-title">${title}</h3>
-          ${
-            closable
-              ? "<button class=\"modal-close\" onclick=\"this.closest('.modal').style.display='none'; document.body.removeChild(this.closest('.modal'));\">×</button>"
-              : ""
-          }
+          ${closeButtonHtml}
         </div>
         <div class="modal-body">
           ${content}
@@ -205,17 +239,35 @@ class Utils {
       </div>
     `;
 
-    // Add click outside to close (only if allowOverlayClose is true)
-    if (allowOverlayClose) {
-      modal.addEventListener("click", (e) => {
-        if (e.target === modal) {
+    if (closable) {
+      const closeButton = modal.querySelector(
+        `#modalCloseBtn-${currentModalId}`
+      );
+      if (closeButton) {
+        closeButton.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
           modal.style.display = "none";
-          document.body.removeChild(modal);
-        }
-      });
+          if (modal.parentNode) {
+            modal.parentNode.removeChild(modal);
+          }
+        });
+      }
     }
 
-    // Add to body and show
+    if (allowOverlayClose) {
+      const overlayClickListener = (e) => {
+        if (e.target === modal) {
+          modal.style.display = "none";
+          if (modal.parentNode) {
+            modal.parentNode.removeChild(modal);
+          }
+        }
+      };
+      modal.addEventListener("click", overlayClickListener);
+      modal.overlayClickListener = overlayClickListener;
+    }
+
     document.body.appendChild(modal);
     modal.style.display = "flex";
 
@@ -310,7 +362,6 @@ class Utils {
     const container = document.createElement("div");
     container.className = "table-container";
 
-    // Create pagination state
     let currentPage = 1;
     let itemsPerPageValue = itemsPerPage;
 
@@ -354,7 +405,6 @@ class Utils {
       const rightSide = document.createElement("div");
       rightSide.className = "pagination-buttons";
 
-      // Previous button
       const prevBtn = document.createElement("button");
       prevBtn.className = "btn btn-secondary pagination-btn";
       prevBtn.innerHTML = "‹ Trước";
@@ -366,7 +416,6 @@ class Utils {
         }
       };
 
-      // Page numbers
       const pageNumbers = document.createElement("div");
       pageNumbers.className = "page-numbers";
 
@@ -381,7 +430,6 @@ class Utils {
         startPage = Math.max(1, endPage - maxVisiblePages + 1);
       }
 
-      // First page
       if (startPage > 1) {
         const firstPage = this.createPageButton(1, currentPage, () => {
           currentPage = 1;
@@ -398,7 +446,6 @@ class Utils {
         }
       }
 
-      // Visible pages
       for (let i = startPage; i <= endPage; i++) {
         const pageBtn = this.createPageButton(i, currentPage, () => {
           currentPage = i;
@@ -407,7 +454,6 @@ class Utils {
         pageNumbers.appendChild(pageBtn);
       }
 
-      // Last page
       if (endPage < totalPages) {
         if (endPage < totalPages - 1) {
           const ellipsis = document.createElement("span");
@@ -424,7 +470,6 @@ class Utils {
         pageNumbers.appendChild(lastPage);
       }
 
-      // Next button
       const nextBtn = document.createElement("button");
       nextBtn.className = "btn btn-secondary pagination-btn";
       nextBtn.innerHTML = "Sau ›";
@@ -447,25 +492,20 @@ class Utils {
     };
 
     const renderTable = () => {
-      // Clear container
       container.innerHTML = "";
 
-      // Calculate pagination
       const startIndex = (currentPage - 1) * itemsPerPageValue;
       const endIndex = startIndex + itemsPerPageValue;
       const pageData = pagination ? data.slice(startIndex, endIndex) : data;
 
-      // Add top pagination if needed
       if (pagination) {
         const topPagination = createPaginationControls();
         container.appendChild(topPagination);
       }
 
-      // Create table
       const table = document.createElement("table");
       table.className = "data-table";
 
-      // Create header
       const thead = document.createElement("thead");
       const headerRow = document.createElement("tr");
 
@@ -476,7 +516,6 @@ class Utils {
           th.style.width = column.width;
         }
 
-        // Add searchable styling and click handler
         if (column.searchable) {
           th.classList.add("searchable");
           if (onHeaderClick) {
@@ -500,7 +539,6 @@ class Utils {
       thead.appendChild(headerRow);
       table.appendChild(thead);
 
-      // Create body
       const tbody = document.createElement("tbody");
 
       if (pageData.length === 0) {
@@ -555,17 +593,15 @@ class Utils {
       table.appendChild(tbody);
       container.appendChild(table);
 
-      // Add bottom pagination if needed
       if (pagination) {
         const bottomPagination = createPaginationControls();
         container.appendChild(bottomPagination);
       }
 
-      // Add event listeners for items per page selects
       container.querySelectorAll(".items-per-page-select").forEach((select) => {
         select.addEventListener("change", (e) => {
           itemsPerPageValue = parseInt(e.target.value);
-          currentPage = 1; // Reset to first page
+          currentPage = 1;
           renderTable();
         });
       });
@@ -676,11 +712,9 @@ class Utils {
   };
 
   static showToast(message, type = "info") {
-    // Remove existing toasts
     const existingToasts = document.querySelectorAll(".toast");
     existingToasts.forEach((toast) => toast.remove());
 
-    // Create toast
     const toast = document.createElement("div");
     toast.className = `toast toast-${type}`;
     toast.innerHTML = `
@@ -690,13 +724,10 @@ class Utils {
       </div>
     `;
 
-    // Add to body
     document.body.appendChild(toast);
 
-    // Animate in
     setTimeout(() => toast.classList.add("show"), 100);
 
-    // Auto remove after 5 seconds
     setTimeout(() => {
       if (toast.parentElement) {
         toast.classList.remove("show");

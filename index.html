@@ -5,62 +5,178 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đăng nhập - Hệ thống Kiểm tra Trùng lặp</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/index.css">
 </head>
 <body>
     <div class="auth-container">
         <div class="auth-card slide-up">
-            <h1>Đăng nhập</h1>
-            <p style="text-align: center; color: #666; margin-bottom: 30px;">
-                Vui lòng đăng nhập để sử dụng hệ thống
-            </p>
-            
-            <form id="loginForm">
-                <div class="form-group">
-                    <label for="email">Email hoặc Tên đăng nhập</label>
-                    <input type="text" id="email" class="form-input" placeholder="Nhập email hoặc tên đăng nhập">
-                    <div class="error-message" id="emailError"></div>
-                </div>
+            <!-- Step Progress Indicator -->
+            <div class="step-progress">
+                <div class="step-indicator active">1</div>
+                <div class="step-indicator">2</div>
+                <div class="step-indicator">3</div>
+                <div class="step-indicator">4</div>
+            </div>
+
+            <!-- Auth Steps Container -->
+            <div class="auth-steps-container">
                 
-                <div class="form-group">
-                    <label for="password">Mật khẩu</label>
-                    <div class="password-input-container">
-                        <input type="password" id="password" class="form-input password-field" placeholder="Nhập mật khẩu">
-                        <button type="button" class="password-toggle" onclick="togglePassword('password', this)" onmouseenter="hoverTogglePassword('password', this, true)" onmouseleave="hoverTogglePassword('password', this, false)">
-                            <!-- SVG mắt ẩn hoàn toàn (với gạch) -->
-                            <svg class="password-icon hide-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M4 4L9.87868 9.87868M20 20L14.1213 14.1213M9.87868 9.87868C9.33579 10.4216 9 11.1716 9 12C9 13.6569 10.3431 15 12 15C12.8284 15 13.5784 14.6642 14.1213 14.1213M9.87868 9.87868L14.1213 14.1213M6.76821 6.76821C4.72843 8.09899 2.96378 10.026 2 11.9998C3.74646 15.5764 8.12201 19 11.9998 19C13.7376 19 15.5753 18.3124 17.2317 17.2317M9.76138 5.34717C10.5114 5.12316 11.2649 5 12.0005 5C15.8782 5 20.2531 8.42398 22 12.0002C21.448 13.1302 20.6336 14.2449 19.6554 15.2412" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                            
-                            <!-- SVG mắt cắt 1/3 (bắt đầu mở) -->
-                            <svg class="password-icon partial1-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">
-                                <path d="M4 4L9.87868 9.87868M20 20L14.1213 14.1213M9.87868 9.87868C9.33579 10.4216 9 11.1716 9 12C9 13.6569 10.3431 15 12 15C12.8284 15 13.5784 14.6642 14.1213 14.1213M9.87868 9.87868L14.1213 14.1213" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M6.76821 6.76821C4.72843 8.09899 2.96378 10.026 2 11.9998C3.74646 15.5764 8.12201 19 11.9998 19C13.7376 19 15.5753 18.3124 17.2317 17.2317" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
-                            </svg>
-                            
-                            <!-- SVG mắt cắt 2/3 (gần như mở) -->
-                            <svg class="password-icon partial2-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">
-                                <path d="M4 4L9.87868 9.87868M20 20L14.1213 14.1213" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/>
-                                <path d="M12,4 C14.7275481,4 17.3356792,5.4306247 19.76629,7.78114976 C20.5955095,8.58304746 21.3456935,9.43915664 22.0060909,10.2956239 C22.4045936,10.8124408 22.687526,11.2189945 22.8424353,11.4612025 L23.1870348,12 L22.8424353,12.5387975 C22.687526,12.7810055 22.4045936,13.1875592 22.0060909,13.7043761" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M12,16 C9.790861,16 8,14.209139 8,12 C8,9.790861 9.790861,8 12,8 C14.209139,8 16,9.790861 16,12 C16,14.209139 14.209139,16 12,16 Z M12,14 C13.1045695,14 14,13.1045695 14,12 C14,10.8954305 13.1045695,10 12,10 C10.8954305,10 10,10.8954305 10,12 C10,13.1045695 10.8954305,14 12,14 Z" fill="currentColor" opacity="0.7"/>
-                            </svg>
-                            
-                            <!-- SVG mắt mở hoàn toàn -->
-                            <svg class="password-icon show-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">
-                                <path fill-rule="evenodd" d="M12,4 C14.7275481,4 17.3356792,5.4306247 19.76629,7.78114976 C20.5955095,8.58304746 21.3456935,9.43915664 22.0060909,10.2956239 C22.4045936,10.8124408 22.687526,11.2189945 22.8424353,11.4612025 L23.1870348,12 L22.8424353,12.5387975 C22.687526,12.7810055 22.4045936,13.1875592 22.0060909,13.7043761 C21.3456935,14.5608434 20.5955095,15.4169525 19.76629,16.2188502 C17.3356792,18.5693753 14.7275481,20 12,20 C9.27245185,20 6.66432084,18.5693753 4.23371003,16.2188502 C3.40449054,15.4169525 2.65430652,14.5608434 1.99390911,13.7043761 C1.59540638,13.1875592 1.31247398,12.7810055 1.15756471,12.5387975 L0.812965202,12 L1.15756471,11.4612025 C1.31247398,11.2189945 1.59540638,10.8124408 1.99390911,10.2956239 C2.65430652,9.43915664 3.40449054,8.58304746 4.23371003,7.78114976 C6.66432084,5.4306247 9.27245185,4 12,4 Z M20.4222529,11.5168761 C19.8176112,10.7327184 19.1301624,9.94820254 18.37596,9.21885024 C16.2825083,7.1943753 14.1050769,6 12,6 C9.89492315,6 7.71749166,7.1943753 5.62403997,9.21885024 C4.86983759,9.94820254 4.18238879,10.7327184 3.57774714,11.5168761 C3.44715924,11.6862352 3.32648802,11.8478224 3.21616526,12 C3.32648802,12.1521776 3.44715924,12.3137648 3.57774714,12.4831239 C4.18238879,13.2672816 4.86983759,14.0517975 5.62403997,14.7811498 C7.71749166,16.8056247 9.89492315,18 12,18 C14.1050769,18 16.2825083,16.8056247 18.37596,14.7811498 C19.1301624,14.0517975 19.8176112,13.2672816 20.4222529,12.4831239 C20.5528408,12.3137648 20.673512,12.1521776 20.7838347,12 C20.673512,11.8478224 20.5528408,11.6862352 20.4222529,11.5168761 Z M12,16 C9.790861,16 8,14.209139 8,12 C8,9.790861 9.790861,8 12,8 C14.209139,8 16,9.790861 16,12 C16,14.209139 14.209139,16 12,16 Z M12,14 C13.1045695,14 14,13.1045695 14,12 C14,10.8954305 13.1045695,10 12,10 C10.8954305,10 10,10.8954305 10,12 C10,13.1045695 10.8954305,14 12,14 Z" fill="currentColor"/>
-                            </svg>
+                <!-- Step 1: Login -->
+                <div id="authStep1" class="auth-step active">
+                    <h1>Đăng nhập</h1>
+                    <p style="text-align: center; color: #666; margin-bottom: 30px;">
+                        Vui lòng đăng nhập để sử dụng hệ thống
+                    </p>
+                    
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="email">Email hoặc Tên đăng nhập</label>
+                            <input type="text" id="email" class="form-input" placeholder="Nhập email hoặc tên đăng nhập">
+                            <div class="error-message" id="emailError"></div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="password">Mật khẩu</label>
+                            <div class="password-input-container">
+                                <input type="password" id="password" class="form-input password-field" placeholder="Nhập mật khẩu">
+                                <button type="button" class="password-toggle" onclick="togglePassword('password', this)" onmouseenter="hoverTogglePassword('password', this, true)" onmouseleave="hoverTogglePassword('password', this, false)">
+                                    <!-- SVG mắt ẩn (với gạch) -->
+                                    <svg class="password-icon hide-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M4 4L9.87868 9.87868M20 20L14.1213 14.1213M9.87868 9.87868C9.33579 10.4216 9 11.1716 9 12C9 13.6569 10.3431 15 12 15C12.8284 15 13.5784 14.6642 14.1213 14.1213M9.87868 9.87868L14.1213 14.1213M6.76821 6.76821C4.72843 8.09899 2.96378 10.026 2 11.9998C3.74646 15.5764 8.12201 19 11.9998 19C13.7376 19 15.5753 18.3124 17.2317 17.2317M9.76138 5.34717C10.5114 5.12316 11.2649 5 12.0005 5C15.8782 5 20.2531 8.42398 22 12.0002C21.448 13.1302 20.6336 14.2449 19.6554 15.2412" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                    
+                                    <!-- SVG mắt mở -->
+                                    <svg class="password-icon show-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+                                        <path fill-rule="evenodd" d="M12,4 C14.7275481,4 17.3356792,5.4306247 19.76629,7.78114976 C20.5955095,8.58304746 21.3456935,9.43915664 22.0060909,10.2956239 C22.4045936,10.8124408 22.687526,11.2189945 22.8424353,11.4612025 L23.1870348,12 L22.8424353,12.5387975 C22.687526,12.7810055 22.4045936,13.1875592 22.0060909,13.7043761 C21.3456935,14.5608434 20.5955095,15.4169525 19.76629,16.2188502 C17.3356792,18.5693753 14.7275481,20 12,20 C9.27245185,20 6.66432084,18.5693753 4.23371003,16.2188502 C3.40449054,15.4169525 2.65430652,14.5608434 1.99390911,13.7043761 C1.59540638,13.1875592 1.31247398,12.7810055 1.15756471,12.5387975 L0.812965202,12 L1.15756471,11.4612025 C1.31247398,11.2189945 1.59540638,10.8124408 1.99390911,10.2956239 C2.65430652,9.43915664 3.40449054,8.58304746 4.23371003,7.78114976 C6.66432084,5.4306247 9.27245185,4 12,4 Z M20.4222529,11.5168761 C19.8176112,10.7327184 19.1301624,9.94820254 18.37596,9.21885024 C16.2825083,7.1943753 14.1050769,6 12,6 C9.89492315,6 7.71749166,7.1943753 5.62403997,9.21885024 C4.86983759,9.94820254 4.18238879,10.7327184 3.57774714,11.5168761 C3.44715924,11.6862352 3.32648802,11.8478224 3.21616526,12 C3.32648802,12.1521776 3.44715924,12.3137648 3.57774714,12.4831239 C4.18238879,13.2672816 4.86983759,14.0517975 5.62403997,14.7811498 C7.71749166,16.8056247 9.89492315,18 12,18 C14.1050769,18 16.2825083,16.8056247 18.37596,14.7811498 C19.1301624,14.0517975 19.8176112,13.2672816 20.4222529,12.4831239 C20.5528408,12.3137648 20.673512,12.1521776 20.7838347,12 C20.673512,11.8478224 20.5528408,11.6862352 20.4222529,11.5168761 Z M12,16 C9.790861,16 8,14.209139 8,12 C8,9.790861 9.790861,8 12,8 C14.209139,8 16,9.790861 16,12 C16,14.209139 14.209139,16 12,16 Z M12,14 C13.1045695,14 14,13.1045695 14,12 C14,10.8954305 13.1045695,10 12,10 C10.8954305,10 10,10.8954305 10,12 C10,13.1045695 10.8954305,14 12,14 Z" fill="currentColor"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="error-message" id="passwordError"></div>
+                        </div>
+                        
+                        <div class="checkbox-group">
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="rememberLogin">
+                                <span class="checkmark"></span>
+                                Lưu thông tin đăng nhập (30 ngày)
+                            </label>
+                        </div>
+                        
+                        <button type="submit" id="loginBtn" class="btn btn-primary btn-full">
+                            Đăng nhập
                         </button>
+                    </form>
+
+                    <div class="step-navigation">
+                        <a href="javascript:void(0)" onclick="showForgotPasswordStep1()" class="step-link">Quên mật khẩu?</a>
                     </div>
-                    <div class="error-message" id="passwordError"></div>
                 </div>
-                
-                <button type="submit" id="loginBtn" class="btn btn-primary btn-full">
-                    Đăng nhập
-                </button>
-            </form>
+
+                <!-- Step 2: Email Input -->
+                <div id="authStep2" class="auth-step">
+                    <h1>Quên mật khẩu</h1>
+                    <p style="text-align: center; color: #666; margin-bottom: 30px;">
+                        Nhập email hoặc tên đăng nhập để lấy lại mật khẩu
+                    </p>
+                    
+                    <div class="form-group">
+                        <label for="forgotEmail">Email hoặc Tên đăng nhập</label>
+                        <input type="text" id="forgotEmail" class="form-input" placeholder="Nhập email hoặc tên đăng nhập">
+                        <div class="error-message" id="forgotEmailError"></div>
+                    </div>
+                    
+                    <button class="btn btn-primary btn-full" onclick="sendOTP()">Tiếp tục</button>
+                    
+                    <div class="step-navigation">
+                        <a href="javascript:void(0)" onclick="goToLogin()" class="step-link">Quay lại đăng nhập</a>
+                    </div>
+                </div>
+
+                <!-- Step 3: OTP Verification -->
+                <div id="authStep3" class="auth-step">
+                    <h1>Xác minh OTP</h1>
+                    <p class="step-description">Vui lòng nhập mã xác minh 6 số đã được gửi đến email của bạn</p>
+                    
+                    <div class="otp-input-container">
+                        <input type="text" class="otp-input otp-inputn1" maxlength="1" placeholder="-" onkeyup="handleOTPInput(this, event)" onkeydown="handleOTPKeyDown(this, event)">
+                        <input type="text" class="otp-input otp-input2" maxlength="1" placeholder="-" autocomplete="off" onkeyup="handleOTPInput(this, event)" onkeydown="handleOTPKeyDown(this, event)">
+                        <input type="text" class="otp-input otp-input3" maxlength="1" placeholder="-" autocomplete="off" onkeyup="handleOTPInput(this, event)" onkeydown="handleOTPKeyDown(this, event)">
+                        <input type="text" class="otp-input otp-input4" maxlength="1" placeholder="-" autocomplete="off" onkeyup="handleOTPInput(this, event)" onkeydown="handleOTPKeyDown(this, event)">
+                        <input type="text" class="otp-input otp-input5" maxlength="1" placeholder="-" autocomplete="off" onkeyup="handleOTPInput(this, event)" onkeydown="handleOTPKeyDown(this, event)">
+                        <input type="text" class="otp-input otp-input6" maxlength="1" placeholder="-" autocomplete="off" onkeyup="handleOTPInput(this, event)" onkeydown="handleOTPKeyDown(this, event)">
+                    </div>
+                    <div class="error-message" id="otpError"></div>
+                    
+                    <div class="resend-otp">
+                        <a href="javascript:void(0)" onclick="resendOTP()">Gửi lại mã</a>
+                    </div>
+                    
+                    <button class="btn btn-primary btn-full" onclick="verifyOTP()">Xác minh</button>
+                    
+                    <div class="step-navigation">
+                        <a href="javascript:void(0)" onclick="goToPrevStep()" class="step-link">Quay lại</a> |
+                        <a href="javascript:void(0)" onclick="goToLogin()" class="step-link">Đăng nhập</a>
+                    </div>
+                </div>
+
+                <!-- Step 4: Password Reset -->
+                <div id="authStep4" class="auth-step">
+                    <h1>Đặt lại mật khẩu</h1>
+                    <p class="step-description">Nhập mật khẩu mới cho tài khoản của bạn</p>
+                    
+                    <div class="form-group">
+                        <label for="newPassword">Mật khẩu mới</label>
+                        <div class="password-input-container">
+                            <input type="password" id="newPassword" class="form-input password-field" placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)">
+                            <button type="button" class="password-toggle" onclick="togglePassword('newPassword', this)" onmouseenter="hoverTogglePassword('newPassword', this, true)" onmouseleave="hoverTogglePassword('newPassword', this, false)">
+                                <svg class="password-icon hide-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M4 4L9.87868 9.87868M20 20L14.1213 14.1213M9.87868 9.87868C9.33579 10.4216 9 11.1716 9 12C9 13.6569 10.3431 15 12 15C12.8284 15 13.5784 14.6642 14.1213 14.1213M9.87868 9.87868L14.1213 14.1213M6.76821 6.76821C4.72843 8.09899 2.96378 10.026 2 11.9998C3.74646 15.5764 8.12201 19 11.9998 19C13.7376 19 15.5753 18.3124 17.2317 17.2317M9.76138 5.34717C10.5114 5.12316 11.2649 5 12.0005 5C15.8782 5 20.2531 8.42398 22 12.0002C21.448 13.1302 20.6336 14.2449 19.6554 15.2412" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <svg class="password-icon show-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+                                    <path fill-rule="evenodd" d="M12,4 C14.7275481,4 17.3356792,5.4306247 19.76629,7.78114976 C20.5955095,8.58304746 21.3456935,9.43915664 22.0060909,10.2956239 C22.4045936,10.8124408 22.687526,11.2189945 22.8424353,11.4612025 L23.1870348,12 L22.8424353,12.5387975 C22.687526,12.7810055 22.4045936,13.1875592 22.0060909,13.7043761 C21.3456935,14.5608434 20.5955095,15.4169525 19.76629,16.2188502 C17.3356792,18.5693753 14.7275481,20 12,20 C9.27245185,20 6.66432084,18.5693753 4.23371003,16.2188502 C3.40449054,15.4169525 2.65430652,14.5608434 1.99390911,13.7043761 C1.59540638,13.1875592 1.31247398,12.7810055 1.15756471,12.5387975 L0.812965202,12 L1.15756471,11.4612025 C1.31247398,11.2189945 1.59540638,10.8124408 1.99390911,10.2956239 C2.65430652,9.43915664 3.40449054,8.58304746 4.23371003,7.78114976 C6.66432084,5.4306247 9.27245185,4 12,4 Z M20.4222529,11.5168761 C19.8176112,10.7327184 19.1301624,9.94820254 18.37596,9.21885024 C16.2825083,7.1943753 14.1050769,6 12,6 C9.89492315,6 7.71749166,7.1943753 5.62403997,9.21885024 C4.86983759,9.94820254 4.18238879,10.7327184 3.57774714,11.5168761 C3.44715924,11.6862352 3.32648802,11.8478224 3.21616526,12 C3.32648802,12.1521776 3.44715924,12.3137648 3.57774714,12.4831239 C4.18238879,13.2672816 4.86983759,14.0517975 5.62403997,14.7811498 C7.71749166,16.8056247 9.89492315,18 12,18 C14.1050769,18 16.2825083,16.8056247 18.37596,14.7811498 C19.1301624,14.0517975 19.8176112,13.2672816 20.4222529,12.4831239 C20.5528408,12.3137648 20.673512,12.1521776 20.7838347,12 C20.673512,11.8478224 20.5528408,11.6862352 20.4222529,11.5168761 Z M12,16 C9.790861,16 8,14.209139 8,12 C8,9.790861 9.790861,8 12,8 C14.209139,8 16,9.790861 16,12 C16,14.209139 14.209139,16 12,16 Z M12,14 C13.1045695,14 14,13.1045695 14,12 C14,10.8954305 13.1045695,10 12,10 C10.8954305,10 10,10.8954305 10,12 C10,13.1045695 10.8954305,14 12,14 Z" fill="currentColor"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="error-message" id="newPasswordError"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confirmPassword">Xác nhận mật khẩu</label>
+                        <div class="password-input-container">
+                            <input type="password" id="confirmPassword" class="form-input password-field" placeholder="Nhập lại mật khẩu mới">
+                            <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword', this)" onmouseenter="hoverTogglePassword('confirmPassword', this, true)" onmouseleave="hoverTogglePassword('confirmPassword', this, false)">
+                                <svg class="password-icon hide-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M4 4L9.87868 9.87868M20 20L14.1213 14.1213M9.87868 9.87868C9.33579 10.4216 9 11.1716 9 12C9 13.6569 10.3431 15 12 15C12.8284 15 13.5784 14.6642 14.1213 14.1213M9.87868 9.87868L14.1213 14.1213M6.76821 6.76821C4.72843 8.09899 2.96378 10.026 2 11.9998C3.74646 15.5764 8.12201 19 11.9998 19C13.7376 19 15.5753 18.3124 17.2317 17.2317M9.76138 5.34717C10.5114 5.12316 11.2649 5 12.0005 5C15.8782 5 20.2531 8.42398 22 12.0002C21.448 13.1302 20.6336 14.2449 19.6554 15.2412" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <svg class="password-icon show-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+                                    <path fill-rule="evenodd" d="M12,4 C14.7275481,4 17.3356792,5.4306247 19.76629,7.78114976 C20.5955095,8.58304746 21.3456935,9.43915664 22.0060909,10.2956239 C22.4045936,10.8124408 22.687526,11.2189945 22.8424353,11.4612025 L23.1870348,12 L22.8424353,12.5387975 C22.687526,12.7810055 22.4045936,13.1875592 22.0060909,13.7043761 C21.3456935,14.5608434 20.5955095,15.4169525 19.76629,16.2188502 C17.3356792,18.5693753 14.7275481,20 12,20 C9.27245185,20 6.66432084,18.5693753 4.23371003,16.2188502 C3.40449054,15.4169525 2.65430652,14.5608434 1.99390911,13.7043761 C1.59540638,13.1875592 1.31247398,12.7810055 1.15756471,12.5387975 L0.812965202,12 L1.15756471,11.4612025 C1.31247398,11.2189945 1.59540638,10.8124408 1.99390911,10.2956239 C2.65430652,9.43915664 3.40449054,8.58304746 4.23371003,7.78114976 C6.66432084,5.4306247 9.27245185,4 12,4 Z M20.4222529,11.5168761 C19.8176112,10.7327184 19.1301624,9.94820254 18.37596,9.21885024 C16.2825083,7.1943753 14.1050769,6 12,6 C9.89492315,6 7.71749166,7.1943753 5.62403997,9.21885024 C4.86983759,9.94820254 4.18238879,10.7327184 3.57774714,11.5168761 C3.44715924,11.6862352 3.32648802,11.8478224 3.21616526,12 C3.32648802,12.1521776 3.44715924,12.3137648 3.57774714,12.4831239 C4.18238879,13.2672816 4.86983759,14.0517975 5.62403997,14.7811498 C7.71749166,16.8056247 9.89492315,18 12,18 C14.1050769,18 16.2825083,16.8056247 18.37596,14.7811498 C19.1301624,14.0517975 19.8176112,13.2672816 20.4222529,12.4831239 C20.5528408,12.3137648 20.673512,12.1521776 20.7838347,12 C20.673512,11.8478224 20.5528408,11.6862352 20.4222529,11.5168761 Z M12,16 C9.790861,16 8,14.209139 8,12 C8,9.790861 9.790861,8 12,8 C14.209139,8 16,9.790861 16,12 C16,14.209139 14.209139,16 12,16 Z M12,14 C13.1045695,14 14,13.1045695 14,12 C14,10.8954305 13.1045695,10 12,10 C10.8954305,10 10,10.8954305 10,12 C10,13.1045695 10.8954305,14 12,14 Z" fill="currentColor"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="error-message" id="confirmPasswordError"></div>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="rememberLogin3">
+                            <span class="checkmark"></span>
+                            Lưu thông tin đăng nhập
+                        </label>
+                    </div>
+                    
+                    <button class="btn btn-primary btn-full" onclick="resetPassword()">Cập nhật mật khẩu</button>
+                    
+                    <div class="step-navigation">
+                        <a href="javascript:void(0)" onclick="goToPrevStep()" class="step-link">Quay lại</a> |
+                        <a href="javascript:void(0)" onclick="goToLogin()" class="step-link">Đăng nhập</a>
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
 
-    <!-- Fast Loading Modal -->
+    <!-- Loading Modal (only for notifications) -->
     <div id="loadingModal" class="loading-modal">
         <div class="loading-modal-content">
             <div class="loading-spinner"></div>
@@ -68,816 +184,8 @@
         </div>
     </div>
 
-    <!-- Application Scripts with optimized loading -->
+    <!-- Application Scripts -->
     <script src="js/utils.js"></script>
-    
-    <!-- Global functions that need to be accessible from HTML -->
-    <script>
-        // Trạng thái cho password toggle
-        let passwordToggleStates = {};
-
-        // Hàm toggle password global - phải trong phạm vi global cho onclick
-        function togglePassword(inputId, button) {
-            const input = document.getElementById(inputId);
-            
-            // Initialize state if not exists
-            if (!passwordToggleStates[inputId]) {
-                passwordToggleStates[inputId] = {
-                    isRevealed: false,
-                    hoverPaused: false,
-                    currentIcon: 'hide'
-                };
-            }
-            
-            const state = passwordToggleStates[inputId];
-            
-            // Toggle password visibility
-            if (input.type === 'password') {
-                input.type = 'text';
-                state.isRevealed = true;
-                state.currentIcon = 'show';
-            } else {
-                input.type = 'password';
-                state.isRevealed = false;
-                state.currentIcon = 'hide';
-            }
-            
-            // Tạm dừng hover trong 2 giây
-            state.hoverPaused = true;
-            updateIconDisplay(button, state.currentIcon, true);
-            
-            setTimeout(() => {
-                state.hoverPaused = false;
-            }, 2000);
-        }
-
-        // Hàm hover toggle password với hiệu ứng mượt mà và animation
-        function hoverTogglePassword(inputId, button, isHovering) {
-            // Initialize state if not exists
-            if (!passwordToggleStates[inputId]) {
-                passwordToggleStates[inputId] = {
-                    isRevealed: false,
-                    hoverPaused: false,
-                    currentIcon: 'hide'
-                };
-            }
-            
-            const state = passwordToggleStates[inputId];
-            const input = document.getElementById(inputId);
-            
-            // Bỏ qua hover nếu đang trong trạng thái pause
-            if (state.hoverPaused) return;
-            
-            if (isHovering) {
-                // Khi hover vào - chuyển đổi với animation
-                if (!state.isRevealed) {
-                    // Chuyển từ ẩn sang hiện với animation
-                    input.type = 'text';
-                    animateIconTransition(button, 'hide', 'show');
-                } else {
-                    // Chuyển từ hiện sang ẩn với animation
-                    input.type = 'password';
-                    animateIconTransition(button, 'show', 'hide');
-                }
-            } else {
-                // Khi rời hover - trở về trạng thái gốc
-                if (!state.isRevealed) {
-                    // Trở về ẩn
-                    input.type = 'password';
-                    animateIconTransition(button, 'show', 'hide');
-                } else {
-                    // Trở về hiện
-                    input.type = 'text';
-                    animateIconTransition(button, 'hide', 'show');
-                }
-            }
-        }
-
-        // Hàm animation chuyển đổi icon mượt mà
-        function animateIconTransition(button, fromState, toState) {
-            const hideIcon = button.querySelector('.hide-icon');
-            const partial1Icon = button.querySelector('.partial1-icon');
-            const partial2Icon = button.querySelector('.partial2-icon');
-            const showIcon = button.querySelector('.show-icon');
-            
-            // Ẩn tất cả icons
-            const hideAll = () => {
-                hideIcon.style.display = 'none';
-                partial1Icon.style.display = 'none';
-                partial2Icon.style.display = 'none';
-                showIcon.style.display = 'none';
-            };
-            
-            if (fromState === toState) {
-                updateIconDisplay(button, toState, false);
-                return;
-            }
-            
-            hideAll();
-            
-            if (fromState === 'hide' && toState === 'show') {
-                // Animation từ ẩn -> hiện: hide -> partial1 -> partial2 -> show
-                hideIcon.style.display = 'block';
-                setTimeout(() => {
-                    hideIcon.style.display = 'none';
-                    partial1Icon.style.display = 'block';
-                }, 50);
-                setTimeout(() => {
-                    partial1Icon.style.display = 'none';
-                    partial2Icon.style.display = 'block';
-                }, 100);
-                setTimeout(() => {
-                    partial2Icon.style.display = 'none';
-                    showIcon.style.display = 'block';
-                }, 150);
-            } else if (fromState === 'show' && toState === 'hide') {
-                // Animation từ hiện -> ẩn: show -> partial2 -> partial1 -> hide
-                showIcon.style.display = 'block';
-                setTimeout(() => {
-                    showIcon.style.display = 'none';
-                    partial2Icon.style.display = 'block';
-                }, 50);
-                setTimeout(() => {
-                    partial2Icon.style.display = 'none';
-                    partial1Icon.style.display = 'block';
-                }, 100);
-                setTimeout(() => {
-                    partial1Icon.style.display = 'none';
-                    hideIcon.style.display = 'block';
-                }, 150);
-            }
-        }
-
-        // Hàm cập nhật hiển thị icon trực tiếp
-        function updateIconDisplay(button, iconState, immediate = false) {
-            const hideIcon = button.querySelector('.hide-icon');
-            const partial1Icon = button.querySelector('.partial1-icon');
-            const partial2Icon = button.querySelector('.partial2-icon');
-            const showIcon = button.querySelector('.show-icon');
-            
-            // Ẩn tất cả
-            hideIcon.style.display = 'none';
-            partial1Icon.style.display = 'none';
-            partial2Icon.style.display = 'none';
-            showIcon.style.display = 'none';
-            
-            // Hiện icon phù hợp
-            if (iconState === 'hide') {
-                hideIcon.style.display = 'block';
-            } else if (iconState === 'show') {
-                showIcon.style.display = 'block';
-            }
-        }
-
-        // Auto-save functionality
-        let autoSaveInterval = null;
-        let lastSavedData = '';
-        let isLoggedIn = false;
-        
-        function startAutoSave() {
-            // Don't start if already logged in
-            if (isLoggedIn) return;
-            
-            // Don't start if already running
-            if (autoSaveInterval) return;
-            
-            // Save form data every 30 seconds (reduced frequency)
-            autoSaveInterval = setInterval(() => {
-                if (!isLoggedIn) {
-                    saveFormDataToLocal();
-                }
-            }, 30000); // 30 seconds instead of 10
-        }
-        
-        function stopAutoSave() {
-            if (autoSaveInterval) {
-                clearInterval(autoSaveInterval);
-                autoSaveInterval = null;
-            }
-        }
-        
-        function saveFormDataToLocal() {
-            try {
-                // Only save if user is not logged in
-                if (isLoggedIn) {
-                    stopAutoSave();
-                    return;
-                }
-                
-                const emailValue = document.getElementById('email')?.value || '';
-                
-                // Only save if there's actually content and it's different from last save
-                if (!emailValue || emailValue === lastSavedData) {
-                    return;
-                }
-                
-                const formData = {
-                    email: emailValue,
-                    timestamp: new Date().toISOString(),
-                    page: 'login'
-                };
-                
-                localStorage.setItem('app_form_backup', JSON.stringify(formData));
-                lastSavedData = emailValue;
-                console.log('Auto-saved form data');
-            } catch (error) {
-                console.warn('Failed to save form data:', error);
-            }
-        }
-        
-        function loadFormDataFromLocal() {
-            try {
-                const savedData = localStorage.getItem('app_form_backup');
-                if (savedData) {
-                    const formData = JSON.parse(savedData);
-                    if (formData.page === 'login' && formData.email) {
-                        const emailInput = document.getElementById('email');
-                        if (emailInput && !emailInput.value) {
-                            emailInput.value = formData.email;
-                            lastSavedData = formData.email;
-                        }
-                    }
-                }
-            } catch (error) {
-                console.warn('Failed to load form data:', error);
-            }
-        }
-        
-        function clearAllLocalData() {
-            try {
-                // Clear all app-related localStorage data
-                const keysToRemove = [];
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key && (key.startsWith('app_') || key.startsWith('auth_') || key.startsWith('user_'))) {
-                        keysToRemove.push(key);
-                    }
-                }
-                
-                keysToRemove.forEach(key => {
-                    localStorage.removeItem(key);
-                });
-                
-                console.log('Cleared local data');
-            } catch (error) {
-                console.warn('Failed to clear local data:', error);
-            }
-        }
-    </script>
-    
-    <script type="module">
-        // Nhập module tối ưu với timeout dự phòng
-        const MODULE_TIMEOUT = 10000; // 10 giây
-        
-        // Bộ tải module nhanh với xử lý lỗi
-        async function loadModules() {
-            try {
-                const loadPromise = Promise.all([
-                    import('./js/config.js'),
-                    import('./js/auth.js')
-                ]);
-                
-                const timeoutPromise = new Promise((_, reject) => {
-                    setTimeout(() => reject(new Error('Hết thời gian tải module')), MODULE_TIMEOUT);
-                });
-                
-                const [configModule, authModule] = await Promise.race([loadPromise, timeoutPromise]);
-                
-                // Làm cho chúng có thể truy cập toàn cục
-                window.configManager = configModule.configManager;
-                window.rateLimiter = configModule.rateLimiter;
-                window.authSystem = authModule.authSystem;
-                
-                return true;
-            } catch (error) {
-                console.error('Không thể tải modules:', error);
-                hideLoadingModal();
-                showError('Lỗi tải ứng dụng. Vui lòng thử lại.');
-                return false;
-            }
-        }
-
-        // Các hàm tiện ích tối ưu
-        function clearErrors() {
-            document.getElementById('emailError').textContent = '';
-            document.getElementById('passwordError').textContent = '';
-        }
-
-        function showFieldError(fieldId, message) {
-            const errorElement = document.getElementById(fieldId + 'Error');
-            if (errorElement) {
-                errorElement.textContent = message;
-                errorElement.style.display = 'block';
-            }
-        }
-
-        function showLoadingModal(text = 'Đang xử lý...') {
-            document.getElementById('loadingText').textContent = text;
-            document.getElementById('loadingModal').style.display = 'flex';
-        }
-
-        function hideLoadingModal() {
-            document.getElementById('loadingModal').style.display = 'none';
-        }
-
-        function showError(message) {
-            alert(message); // Hiển thị lỗi dự phòng đơn giản
-        }
-
-        function showLockedAccountModal(message) {
-            const modal = document.createElement('div');
-            modal.className = 'locked-account-modal';
-            modal.innerHTML = `
-                <div class="locked-account-content">
-                    <div class="locked-account-icon">🔒</div>
-                    <h3>Tài khoản bị khóa</h3>
-                    <p>${message}</p>
-                    <button class="btn btn-primary" onclick="this.closest('.locked-account-modal').remove()">
-                        Đã hiểu
-                    </button>
-                </div>
-            `;
-            document.body.appendChild(modal);
-        }
-
-        // Kiểm tra hệ thống xác thực nhanh
-        async function waitForAuthSystem(maxAttempts = 100) {
-            for (let i = 0; i < maxAttempts; i++) {
-                if (window.authSystem) return true;
-                await new Promise(resolve => setTimeout(resolve, 50));
-            }
-            return false;
-        }
-
-        // Khởi tạo tối ưu
-        async function initializeApp() {
-            showLoadingModal('Đang tải ứng dụng...');
-            
-            // Tải modules
-            const modulesLoaded = await loadModules();
-            if (!modulesLoaded) return;
-            
-            showLoadingModal('Đang khởi tạo bảo mật...');
-            
-            // Chờ hệ thống xác thực
-            const authReady = await waitForAuthSystem();
-            if (!authReady) {
-                hideLoadingModal();
-                showError('Không thể khởi tạo hệ thống xác thực.');
-                return;
-            }
-
-            hideLoadingModal();
-            
-            // Kiểm tra xem người dùng đã đăng nhập chưa
-            if (authSystem.isLoggedIn()) {
-                authSystem.redirectToAppropriatePanel();
-                return;
-            }
-
-            // Thiết lập xử lý form
-            setupFormHandlers();
-        }
-
-        function setupFormHandlers() {
-            const loginForm = document.getElementById('loginForm');
-            const emailInput = document.getElementById('email');
-            const passwordInput = document.getElementById('password');
-
-            // Tải dữ liệu form đã lưu
-            loadFormDataFromLocal();
-            
-            // Chỉ bắt đầu tự động lưu nếu chưa đăng nhập
-            if (!authSystem.isLoggedIn()) {
-                startAutoSave();
-            } else {
-                isLoggedIn = true;
-            }
-
-            // Xử lý submit form
-            loginForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                // Dừng tự động lưu ngay khi submit
-                stopAutoSave();
-                
-                clearErrors();
-                
-                const email = emailInput.value.trim();
-                const password = passwordInput.value.trim();
-
-                // Kiểm tra phía client
-                let hasErrors = false;
-
-                if (!email) {
-                    showFieldError('email', 'Vui lòng nhập email hoặc tên đăng nhập');
-                    hasErrors = true;
-                }
-
-                if (!password) {
-                    showFieldError('password', 'Vui lòng nhập mật khẩu');
-                    hasErrors = true;
-                }
-
-                if (hasErrors) {
-                    // Chỉ khởi động lại tự động lưu nếu đăng nhập thất bại
-                    if (!isLoggedIn) {
-                        startAutoSave();
-                    }
-                    return;
-                }
-
-                showLoadingModal('Đang xác thực tài khoản...');
-
-                try {
-                    const result = await authSystem.login(email, password);
-                    
-                    if (result.success) {
-                        // Đánh dấu đã đăng nhập để ngăn tự động lưu
-                        isLoggedIn = true;
-                        stopAutoSave();
-                        
-                        showLoadingModal('Đăng nhập thành công!');
-                        
-                        // Xóa dữ liệu tự động lưu khi đăng nhập thành công
-                        localStorage.removeItem('app_form_backup');
-                        
-                        // Chuyển hướng nhanh
-                        setTimeout(() => {
-                            hideLoadingModal();
-                            authSystem.redirectToAppropriatePanel();
-                        }, 300);
-                    } else {
-                        hideLoadingModal();
-                        
-                        // Chỉ khởi động lại tự động lưu nếu vẫn chưa đăng nhập
-                        if (!isLoggedIn) {
-                            startAutoSave();
-                        }
-                        
-                        // Kiểm tra nếu user bị khóa
-                        if (result.isLocked) {
-                            showLockedAccountModal(result.message);
-                            return;
-                        }
-                        
-                        // Hiển thị lỗi cụ thể cho từng trường
-                        if (result.field === 'email') {
-                            showFieldError('email', result.message);
-                        } else if (result.field === 'password') {
-                            showFieldError('password', result.message);
-                        } else {
-                            showFieldError('email', result.message);
-                        }
-                    }
-                } catch (error) {
-                    console.error('Lỗi đăng nhập:', error);
-                    hideLoadingModal();
-                    
-                    // Chỉ khởi động lại tự động lưu nếu vẫn chưa đăng nhập
-                    if (!isLoggedIn) {
-                        startAutoSave();
-                    }
-                    
-                    showFieldError('email', 'Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại!');
-                }
-            });
-
-            // Xử lý input tối ưu - chỉ lưu khi có thay đổi có ý nghĩa
-            let emailSaveTimeout = null;
-            emailInput.addEventListener('input', () => {
-                document.getElementById('emailError').textContent = '';
-                
-                // Không lưu nếu đã đăng nhập
-                if (isLoggedIn) return;
-                
-                // Debounce việc lưu để tránh quá nhiều lần gọi
-                clearTimeout(emailSaveTimeout);
-                emailSaveTimeout = setTimeout(() => {
-                    const currentValue = emailInput.value.trim();
-                    if (currentValue && currentValue !== lastSavedData) {
-                        saveFormDataToLocal();
-                    }
-                }, 2000); // Đợi 2 giây sau khi người dùng ngừng gõ
-            });
-
-            passwordInput.addEventListener('input', () => {
-                document.getElementById('passwordError').textContent = '';
-            });
-
-            // Thêm xử lý phím Enter
-            emailInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    passwordInput.focus();
-                }
-            });
-
-            passwordInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    loginForm.dispatchEvent(new Event('submit'));
-                }
-            });
-
-            // Tự động focus vào input email
-            emailInput.focus();
-            
-            // Dọn dẹp khi thoát trang
-            window.addEventListener('beforeunload', () => {
-                stopAutoSave();
-            });
-        }
-
-        // Khởi động ứng dụng
-        document.addEventListener('DOMContentLoaded', initializeApp);
-        
-        // Khởi tạo dự phòng nếu DOMContentLoaded đã kích hoạt
-        if (document.readyState === 'loading') {
-            // DOMContentLoaded sẽ xử lý
-        } else {
-            // DOM đã được tải
-            setTimeout(initializeApp, 0);
-        }
-    </script>
-
-    <style>
-        /* Error Messages */
-        .error-message {
-            color: #d32f2f;
-            font-size: 12px;
-            margin-top: 5px;
-            display: none;
-            min-height: 16px;
-        }
-
-        .form-input.error {
-            border-color: #f44336;
-            box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.1);
-        }
-
-        /* Optimized Loading Modal */
-        .loading-modal {
-            display: none;
-            position: fixed;
-            z-index: 9999;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
-            justify-content: center;
-            align-items: center;
-        }
-
-        .loading-modal-content {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            min-width: 300px;
-        }
-
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #ff6b35;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite; /* Faster spin */
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        #loadingText {
-            color: #666;
-            font-weight: 500;
-            margin: 0;
-        }
-        
-        /* Performance optimizations */
-        * {
-            box-sizing: border-box;
-        }
-        
-        .auth-container {
-            will-change: transform;
-        }
-        
-        .slide-up {
-            animation: slideUp 0.4s ease-out; /* Faster animation */
-        }
-        
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Locked Account Modal */
-        .locked-account-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(5px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        .locked-account-content {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 400px;
-            animation: scaleIn 0.3s ease-out;
-        }
-
-        .locked-account-icon {
-            font-size: 60px;
-            margin-bottom: 20px;
-        }
-
-        .locked-account-content h3 {
-            color: #d32f2f;
-            margin-bottom: 15px;
-            font-size: 24px;
-        }
-
-        .locked-account-content p {
-            color: #666;
-            margin-bottom: 25px;
-            line-height: 1.5;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes scaleIn {
-            from { 
-                opacity: 0;
-                transform: scale(0.8);
-            }
-            to { 
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        /* Styling toggle mật khẩu */
-        .password-input-container {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .password-input-container .form-input {
-            padding-right: 45px;
-            transition: all 0.3s ease;
-        }
-
-        /* Fix chiều cao cố định cho password field để tránh giật */
-        .password-field {
-            height: 50px; /* Chiều cao cố định */
-            line-height: 1.4;
-            min-height: 50px;
-            max-height: 50px;
-            overflow: hidden;
-        }
-
-        /* Đảm bảo text và dots có cùng chiều cao */
-        .password-field[type="password"] {
-            letter-spacing: 3px; /* Tăng spacing cho dots */
-            font-family: monospace;
-            font-size: 16px;
-        }
-
-        .password-field[type="text"] {
-            letter-spacing: normal;
-            font-family: inherit;
-            font-size: 16px;
-        }
-
-        .password-toggle {
-            position: absolute;
-            right: 12px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 5px;
-            color: #ff6b35; /* Màu cam mặc định */
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 4px;
-            z-index: 10;
-        }
-
-        .password-toggle:hover {
-            color: #e55a2b; /* Màu cam đậm hơn khi hover */
-            background-color: rgba(255, 107, 53, 0.1);
-            transform: scale(1.05);
-        }
-
-        .password-toggle:active {
-            transform: scale(0.95);
-        }
-
-        .password-icon {
-            width: 20px;
-            height: 20px;
-            transition: all 0.2s ease-in-out;
-            opacity: 1;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        /* Hiệu ứng animation mượt mà cho các icon trung gian */
-        .password-icon.partial1-icon,
-        .password-icon.partial2-icon {
-            animation: iconPulse 0.15s ease-in-out;
-        }
-
-        @keyframes iconPulse {
-            0% { 
-                opacity: 0;
-                transform: translate(-50%, -50%) scale(0.8);
-            }
-            50% { 
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(1.1);
-            }
-            100% { 
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(1);
-            }
-        }
-
-        /* Hiệu ứng chuyển đổi mượt mà cho tất cả icons */
-        .password-toggle:hover .password-icon {
-            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        /* Hiệu ứng glow nhẹ cho input khi hover vào toggle */
-        .password-toggle:hover + .form-input,
-        .password-input-container:hover .form-input {
-            box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.2);
-            border-color: #ff6b35;
-        }
-
-        /* Hiệu ứng animation cho việc chuyển đổi password bị loại bỏ để tránh giật */
-        
-        /* Responsive cho mobile */
-        @media (max-width: 768px) {
-            .password-toggle {
-                padding: 8px;
-                right: 10px;
-            }
-            
-            .password-icon {
-                width: 18px;
-                height: 18px;
-            }
-            
-            .password-field {
-                height: 45px;
-                min-height: 45px;
-                max-height: 45px;
-                font-size: 14px;
-            }
-        }
-
-        /* Đảm bảo input container có chiều cao ổn định */
-        .password-input-container {
-            min-height: 50px;
-        }
-
-        @media (max-width: 768px) {
-            .password-input-container {
-                min-height: 45px;
-            }
-        }
-    </style>
+    <script src="js/index.js"></script>
 </body>
-</html>
+</html> 
