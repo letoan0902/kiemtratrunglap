@@ -175,8 +175,8 @@
 
 /* Đảm bảo text và dots có cùng chiều cao trong admin */
 .password-field[type="password"] {
-  letter-spacing: 3px; /* Tăng spacing cho dots */
-  font-family: monospace;
+  letter-spacing: normal; /* Thay đổi từ 3px thành normal */
+  font-family: inherit; /* Thay đổi từ monospace thành inherit để dùng font chung */
   font-size: 16px;
 }
 
