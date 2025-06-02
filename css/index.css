@@ -180,6 +180,19 @@
   font-size: 16px;
 }
 
+/* Đảm bảo placeholder của password fields có font đúng */
+.password-field[type="password"]::placeholder {
+  font-family: inherit;
+  letter-spacing: normal;
+  color: #999;
+}
+
+.password-field[type="text"]::placeholder {
+  font-family: inherit;
+  letter-spacing: normal;
+  color: #999;
+}
+
 .password-toggle {
   position: absolute;
   right: 12px;
