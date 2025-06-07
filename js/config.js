@@ -114,6 +114,8 @@ class FirebaseConfigManager {
         "localhost",
         "127.0.0.1",
         "letoan0902.github.io",
+        "letoan-kiemtratrunglap.netlify.app",
+        "netlify.app",
       ];
 
       const hostname = window.location.hostname;
@@ -141,9 +143,18 @@ class FirebaseConfigManager {
 
   // Xác thực domain nhanh
   isValidDomain() {
-    const allowedDomains = ["localhost", "127.0.0.1", "letoan0902.github.io"];
+    const allowedDomains = [
+      "localhost",
+      "127.0.0.1",
+      "letoan0902.github.io",
+      "letoan-kiemtratrunglap.netlify.app",
+      "netlify.app",
+    ];
 
-    return allowedDomains.includes(window.location.hostname);
+    const hostname = window.location.hostname;
+    return allowedDomains.some(
+      (domain) => hostname === domain || hostname.endsWith("." + domain)
+    );
   }
 }
 
